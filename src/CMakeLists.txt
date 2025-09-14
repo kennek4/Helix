@@ -1,0 +1,8 @@
+project(
+  HELIX_EXEC
+  VERSION ${HELIX_VERSION}
+  DESCRIPTION "A simple sprite editor")
+
+add_executable(Helix main.cpp)
+set_target_properties(Helix PROPERTIES OUTPUT_NAME Helix_v${HELIX_VERSION})
+target_link_directories(Helix PRIVATE ${HELIX_ROOT}/src)
