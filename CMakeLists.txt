@@ -16,4 +16,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Directories
 add_subdirectory(src)
-add_subdirectory(include)
+add_subdirectory(include/helix)
