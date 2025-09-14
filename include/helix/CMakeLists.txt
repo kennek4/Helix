@@ -24,4 +24,4 @@ set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
 
 add_library(HELIX_LIB STATIC ${HELIX_SRC})
-target_link_libraries(HELIX_LIB SDL3::SDL3)
+target_link_libraries(HELIX_LIB imgui SDL3::SDL3)
