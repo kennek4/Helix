@@ -1,7 +1,10 @@
 project(HELIX_INCLUDE_CMAKE)
 
-set(HELIX_HEADER test.h)
-set(HELIX_SRC test.cpp)
+include(core/CMakeLists.txt)
+include(gui/CMakeLists.txt)
+
+set(HELIX_HEADER ${HELIX_CORE_HEADER} ${HELIX_GUI_HEADER} ${HELIX_SDL_HEADER})
+set(HELIX_SRC ${HELIX_CORE_SRC} ${HELIX_GUI_SRC} ${HELIX_SDL_SRC})
 list(APPEND HELIX_SRC ${HELIX_HEADER})
 
 # SDL
@@ -24,4 +27,5 @@ set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
 
 add_library(HELIX_LIB STATIC ${HELIX_SRC})
+target_include_directories(HELIX_LIB PUBLIC core gui)
 target_link_libraries(HELIX_LIB imgui SDL3::SDL3)
