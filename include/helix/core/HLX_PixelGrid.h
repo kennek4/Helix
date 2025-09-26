@@ -13,12 +13,11 @@ namespace HLX {
 const static Uint32 SDL_EVENT_USER_ZOOM = SDL_RegisterEvents(1);
 
 typedef struct PixelGridProperties {
-    int canvasMaxX;
-    int canvasMaxY;
+    int *windowWidth = nullptr;
+    int *windowHeight = nullptr;
 
-    SDL_Point gridStartPoint{0, 0};
-    int gridWidth = 32;
-    int gridHeight = 32;
+    int gridWidth = 0;
+    int gridHeight = 0;
     float currentZoom = 1.0f;
     float minZoom = 0.5f;
     float maxZoom = 2.0f;
@@ -38,7 +37,15 @@ class PixelGrid {
     void handleResize(SDL_Event *event);
 
   private:
+    inline bool pointInRange(int value, int minValue, int maxValue) const;
+    SDL_Point convertToGridCoords(int x, int y);
+
     PixelGridProperties mProps;
+
+    SDL_Point mGridMinimumPoint{0, 0};
+    SDL_Point mGridMiddlePoint{0, 0};
+    SDL_Point mGridMaximumPoint{0, 0};
+
     std::vector<HLX::Pixel *> mPixels{};
     Pixel *mHoveredPixel = nullptr;
 

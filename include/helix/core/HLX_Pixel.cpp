@@ -30,8 +30,6 @@ void Pixel::handleMouseClick(SDL_Event *event, const SDL_Color &fillColor) {
     mFillColor = fillColor;
 };
 
-void Pixel::handleMouseHover(SDL_Event *event) {
-
-};
+void Pixel::handleMouseHover(SDL_Event *event) {};
 
 }; // namespace HLX

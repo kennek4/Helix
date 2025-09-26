@@ -4,39 +4,64 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
-#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+
+bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
+    static bool inDomain{false};
+    static bool inRange{false};
+
+    inDomain = (point->x >= minPoint->x) && (point->x < maxPoint->x);
+    inRange = (point->y >= minPoint->y) && (point->y < maxPoint->y);
+
+    return inDomain && inRange;
+};
 
 namespace HLX {
-
 PixelGrid::PixelGrid(PixelGridProperties props, SDL_Renderer *renderer)
     : mProps(props), mSDLRenderer(renderer) {
+
     const int TOTAL_PIXEL_COUNT = mProps.gridWidth * mProps.gridHeight;
     mPixels.reserve(TOTAL_PIXEL_COUNT);
 
-    // Create default initial grid
+    // NOTE: Calculate grid position
+    mGridMiddlePoint = {*mProps.windowWidth / 2, *mProps.windowHeight / 2};
+    SDL_Log("Mid Point: %d, %d", mGridMiddlePoint.x, mGridMiddlePoint.y);
+
+    // NOTE: 25 would be the side length
+    // NOTE: These point values are at the CENTRE of the Pixel,
+    // this means that SDL_Rects are off by +25 on the X and Y axises
+    mGridMinimumPoint.x = mGridMiddlePoint.x - ((mProps.gridWidth / 2) * 25);
+    mGridMinimumPoint.y = mGridMiddlePoint.y - ((mProps.gridHeight / 2) * 25);
+    SDL_Log("Min Point: %d, %d", mGridMinimumPoint.x, mGridMinimumPoint.y);
+
+    mGridMaximumPoint.x = mGridMiddlePoint.x + ((mProps.gridWidth / 2) * 25);
+    mGridMaximumPoint.y = mGridMiddlePoint.y + ((mProps.gridHeight / 2) * 25);
+    SDL_Log("Max Point: %d, %d", mGridMaximumPoint.x, mGridMaximumPoint.y);
+
     const float sideLength = 25 * mProps.currentZoom;
 
-    SDL_FRect pixelData;
-    pixelData.x = mProps.gridStartPoint.x;
-    pixelData.y = mProps.gridStartPoint.y;
-    pixelData.w = pixelData.h = 25;
+    // NOTE: Offset X, Y positions to account for SDL_Rect origin being top left
+    // of the rectangle
+    SDL_FRect *pixelData = new SDL_FRect;
+    pixelData->x = mGridMinimumPoint.x;
+    pixelData->y = mGridMinimumPoint.y;
+    pixelData->w = pixelData->h = 25;
 
-    for (int y = 0; y < mPixels.capacity(); y++) {
+    mPixels.emplace_back(new Pixel(*pixelData));
+    // NOTE: Add all points except first and last
+    for (int y = 1; y < mPixels.capacity(); y++) {
         if (y % mProps.gridHeight == 0) {
-            pixelData.x = mProps.gridStartPoint.x;
-            pixelData.y += sideLength;
-        };
+            pixelData->x = mGridMinimumPoint.x;
+            pixelData->y += sideLength;
+        } else {
+            pixelData->x += sideLength;
+        }
 
-        pixelData.x += sideLength;
-        mPixels.emplace_back(new Pixel(pixelData));
+        mPixels.emplace_back(new Pixel(*pixelData));
     };
 
-    // TODO: Replace 25 with pixel side length
-    // 100 is grid offset
-    mProps.canvasMaxY =
-        mProps.gridStartPoint.y + (mProps.gridHeight * 25) + 100;
-    mProps.canvasMaxX = mProps.gridStartPoint.x + (mProps.gridWidth * 25) + 100;
-    SDL_Log("Max X: %d, Max Y: %d", mProps.canvasMaxX, mProps.canvasMaxY);
+    delete pixelData;
 };
 
 PixelGrid::~PixelGrid() {
@@ -80,58 +105,36 @@ void PixelGrid::render() {
 };
 
 void PixelGrid::handleMouseEvent(SDL_Event *event) {
-    static SDL_FPoint mousePos{0, 0};
-    mousePos = {event->motion.x, event->motion.y};
-
-    // TODO: Add canvas bounds checking here
-    //  check if the mouse click/motion is even within the canvas
-    //  if not, discard / do nothing
-    //  100 is offset
-    static bool inDomain{false};
-    static bool inRange{false};
-
-    // TODO: 125 is offset + sideLength
-    inDomain = mousePos.x >= 125 && mousePos.x <= mProps.canvasMaxX;
-    // SDL_Log("inDomain: %b", inDomain);
-
-    inRange = mousePos.y >= 125 && mousePos.y <= mProps.canvasMaxY;
-    // SDL_Log("inRange: %b", inRange);
-
-    if (!(inDomain && inRange)) {
-        return;
-    }
-
+    static SDL_Point mousePos{0, 0};
     static int gridX{0};
     static int gridY{0};
-
-    // TODO: Replace 25 with the Pixel "side length"
-    // 100 is the offset of the canvas
-    gridX = (int)mousePos.x - 100;
-    gridX = std::max(0, gridX);
-    gridX = gridX / 25 - 1;
-
-    gridY = (int)mousePos.y - 100;
-    gridY = std::max(0, gridY);
-    gridY = gridY / 25 - 1;
-
-    // i = (gridX + (gridWidth * gridY) - gridWidth + 1) -
     static int pixelIndex{0};
 
-    // TODO: 32 is the gridWidth
-    // TODO: 100 is the offset of grid
-    pixelIndex = gridX + ((32 * gridY));
+    mousePos = {(int)event->motion.x, (int)event->motion.y};
 
-    if (!SDL_PointInRectFloat(&mousePos, &mPixels.at(pixelIndex)->getData())) {
+    if (!isWithinGrid(&mousePos, &mGridMinimumPoint, &mGridMaximumPoint))
+        return;
+
+    gridX = mousePos.x - mGridMinimumPoint.x;
+    gridX = std::floor(gridX / 25);
+
+    gridY = mousePos.y - mGridMinimumPoint.y;
+    gridY = std::floor(gridY / 25);
+
+    SDL_Log("Hovering over box [%d][%d]", gridX, gridY);
+
+    pixelIndex = gridX + (mProps.gridWidth * gridY);
+    SDL_Log("Pixel Index: %d", pixelIndex);
+
+    try {
+    } catch (const std::out_of_range &ex) {
+        SDL_Log("Out of Bounds: %s", ex.what());
     };
-
-    // mLastUsedPixel = &mPixels.at(pixelIndex);
 
     if (event->type == SDL_EVENT_MOUSE_MOTION) {
         mPixels.at(pixelIndex)->handleMouseHover(event);
     } else if (SDL_EVENT_MOUSE_BUTTON_DOWN) {
         const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        SDL_Log("mx: %f, my: %f", event->motion.x, event->motion.y);
-        SDL_Log("px: %f, py: %f", pix.x, pix.y);
         mPixels.at(pixelIndex)
             ->handleMouseClick(event, SDL_Color{255, 0, 0, SDL_ALPHA_OPAQUE});
     };
@@ -143,5 +146,10 @@ void PixelGrid::handleZoom(SDL_Event *event) {
 };
 
 void PixelGrid::handleResize(SDL_Event *event) { return; };
+
+inline bool PixelGrid::pointInRange(int value, int minValue,
+                                    int maxValue) const {
+    return (value >= minValue && value <= maxValue);
+};
 
 }; // namespace HLX
