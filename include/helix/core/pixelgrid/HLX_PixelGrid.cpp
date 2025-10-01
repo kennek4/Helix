@@ -1,11 +1,12 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_Pixel.h"
+#include <SDL3/SDL_blendmode.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
 #include <cmath>
-#include <stdexcept>
 
 bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     static bool inDomain{false};
@@ -23,6 +24,9 @@ PixelGrid::PixelGrid(PixelGridProperties props, SDL_Renderer *renderer)
 
     const int TOTAL_PIXEL_COUNT = mProps.gridWidth * mProps.gridHeight;
     mPixels.reserve(TOTAL_PIXEL_COUNT);
+
+    // NOTE: Set alpha blending mode
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     // NOTE: Calculate grid position
     mGridMiddlePoint = {*mProps.windowWidth / 2, *mProps.windowHeight / 2};
@@ -79,32 +83,35 @@ void PixelGrid::reset() {
 };
 
 void PixelGrid::render() {
-    SDL_Color pixelColor;
-    PixelState pixelState;
+    static SDL_FColor pixelColor{255, 255, 255, SDL_ALPHA_OPAQUE};
+    static PixelState pixelState{PixelState::EMPTY};
 
+    // HACK: This shit looks wack, def better ways
     for (Pixel *pixel : mPixels) {
         pixelState = pixel->getState();
-
         if (pixelState == PixelState::FILLED) {
             pixelColor = pixel->getFillColor();
-            SDL_SetRenderDrawColor(mSDLRenderer, pixelColor.r, pixelColor.g,
-                                   pixelColor.b, SDL_ALPHA_OPAQUE);
+            SDL_SetRenderDrawColorFloat(mSDLRenderer, pixelColor.r,
+                                        pixelColor.g, pixelColor.b,
+                                        pixelColor.a);
             SDL_RenderFillRect(mSDLRenderer, &pixel->getData());
         } else if (pixelState == PixelState::HOVER) {
             pixelColor = DEFAULT_COLORS.at(PixelColors::GREY);
-            SDL_SetRenderDrawColor(mSDLRenderer, pixelColor.r, pixelColor.g,
-                                   pixelColor.b, SDL_ALPHA_OPAQUE);
+            SDL_SetRenderDrawColorFloat(mSDLRenderer, pixelColor.r,
+                                        pixelColor.g, pixelColor.b,
+                                        pixelColor.a);
             SDL_RenderFillRect(mSDLRenderer, &pixel->getData());
         } else {
             pixelColor = pixel->getOutlineColor();
-            SDL_SetRenderDrawColor(mSDLRenderer, pixelColor.r, pixelColor.g,
-                                   pixelColor.b, SDL_ALPHA_OPAQUE);
+            SDL_SetRenderDrawColorFloat(mSDLRenderer, pixelColor.r,
+                                        pixelColor.g, pixelColor.b,
+                                        SDL_ALPHA_OPAQUE);
             SDL_RenderRect(mSDLRenderer, &pixel->getData());
         };
     };
 };
 
-void PixelGrid::handleMouseEvent(SDL_Event *event) {
+void PixelGrid::handleMouseEvent(SDL_Event *event, SDL_FColor &color) {
     static SDL_Point mousePos{0, 0};
     static int gridX{0};
     static int gridY{0};
@@ -121,22 +128,16 @@ void PixelGrid::handleMouseEvent(SDL_Event *event) {
     gridY = mousePos.y - mGridMinimumPoint.y;
     gridY = std::floor(gridY / 25);
 
-    SDL_Log("Hovering over box [%d][%d]", gridX, gridY);
-
     pixelIndex = gridX + (mProps.gridWidth * gridY);
-    SDL_Log("Pixel Index: %d", pixelIndex);
-
-    try {
-    } catch (const std::out_of_range &ex) {
-        SDL_Log("Out of Bounds: %s", ex.what());
-    };
-
+    // TODO: Somehow figure out how to have a "SELECTION" overlay on the current
+    // pixel? maybe move around a seperate from the grid SDL_Rect that is half
+    // transparent and grey? this way individual pixels don't store a seperate
+    // bool
     if (event->type == SDL_EVENT_MOUSE_MOTION) {
         mPixels.at(pixelIndex)->handleMouseHover(event);
     } else if (SDL_EVENT_MOUSE_BUTTON_DOWN) {
-        const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        mPixels.at(pixelIndex)
-            ->handleMouseClick(event, SDL_Color{255, 0, 0, SDL_ALPHA_OPAQUE});
+        static const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
+        mPixels.at(pixelIndex)->handleMouseClick(event, color);
     };
 };
 
@@ -146,10 +147,5 @@ void PixelGrid::handleZoom(SDL_Event *event) {
 };
 
 void PixelGrid::handleResize(SDL_Event *event) { return; };
-
-inline bool PixelGrid::pointInRange(int value, int minValue,
-                                    int maxValue) const {
-    return (value >= minValue && value <= maxValue);
-};
 
 }; // namespace HLX

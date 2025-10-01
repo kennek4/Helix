@@ -32,14 +32,11 @@ class PixelGrid {
     void reset();
 
     void render();
-    void handleMouseEvent(SDL_Event *event);
+    void handleMouseEvent(SDL_Event *event, SDL_FColor &color);
     void handleZoom(SDL_Event *event);
     void handleResize(SDL_Event *event);
 
   private:
-    inline bool pointInRange(int value, int minValue, int maxValue) const;
-    SDL_Point convertToGridCoords(int x, int y);
-
     PixelGridProperties mProps;
 
     SDL_Point mGridMinimumPoint{0, 0};
