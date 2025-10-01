@@ -19,44 +19,51 @@ bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
 };
 
 namespace HLX {
-PixelGrid::PixelGrid(PixelGridProperties props, SDL_Renderer *renderer)
-    : mProps(props), mSDLRenderer(renderer) {
+PixelGrid::PixelGrid(PixelGridState *state, SDL_Renderer *renderer,
+                     int &windowWidth, int &windowHeight)
+    : mState(state), mSDLRenderer(renderer) {
 
-    const int TOTAL_PIXEL_COUNT = mProps.gridWidth * mProps.gridHeight;
+    const int TOTAL_PIXEL_COUNT = mState->gridWidth * mState->gridHeight;
     mPixels.reserve(TOTAL_PIXEL_COUNT);
 
     // NOTE: Set alpha blending mode
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     // NOTE: Calculate grid position
-    mGridMiddlePoint = {*mProps.windowWidth / 2, *mProps.windowHeight / 2};
-    SDL_Log("Mid Point: %d, %d", mGridMiddlePoint.x, mGridMiddlePoint.y);
+    mState->middlePoint = {windowWidth / 2, windowHeight / 2};
+    SDL_Log("Mid Point: %d, %d", mState->middlePoint.x, mState->middlePoint.y);
 
     // NOTE: 25 would be the side length
     // NOTE: These point values are at the CENTRE of the Pixel,
     // this means that SDL_Rects are off by +25 on the X and Y axises
-    mGridMinimumPoint.x = mGridMiddlePoint.x - ((mProps.gridWidth / 2) * 25);
-    mGridMinimumPoint.y = mGridMiddlePoint.y - ((mProps.gridHeight / 2) * 25);
-    SDL_Log("Min Point: %d, %d", mGridMinimumPoint.x, mGridMinimumPoint.y);
+    mState->minimumPoint.x =
+        mState->middlePoint.x - ((mState->gridWidth / 2) * 25);
+    mState->minimumPoint.y =
+        mState->middlePoint.y - ((mState->gridHeight / 2) * 25);
+    SDL_Log("Min Point: %d, %d", mState->minimumPoint.x,
+            mState->minimumPoint.y);
 
-    mGridMaximumPoint.x = mGridMiddlePoint.x + ((mProps.gridWidth / 2) * 25);
-    mGridMaximumPoint.y = mGridMiddlePoint.y + ((mProps.gridHeight / 2) * 25);
-    SDL_Log("Max Point: %d, %d", mGridMaximumPoint.x, mGridMaximumPoint.y);
+    mState->maximumPoint.x =
+        mState->middlePoint.x + ((mState->gridWidth / 2) * 25);
+    mState->maximumPoint.y =
+        mState->middlePoint.y + ((mState->gridHeight / 2) * 25);
+    SDL_Log("Max Point: %d, %d", mState->maximumPoint.x,
+            mState->maximumPoint.y);
 
-    const float sideLength = 25 * mProps.currentZoom;
+    const float sideLength = 25 * mState->currentZoom;
 
     // NOTE: Offset X, Y positions to account for SDL_Rect origin being top left
     // of the rectangle
     SDL_FRect *pixelData = new SDL_FRect;
-    pixelData->x = mGridMinimumPoint.x;
-    pixelData->y = mGridMinimumPoint.y;
+    pixelData->x = mState->minimumPoint.x;
+    pixelData->y = mState->minimumPoint.y;
     pixelData->w = pixelData->h = 25;
 
     mPixels.emplace_back(new Pixel(*pixelData));
     // NOTE: Add all points except first and last
     for (int y = 1; y < mPixels.capacity(); y++) {
-        if (y % mProps.gridHeight == 0) {
-            pixelData->x = mGridMinimumPoint.x;
+        if (y % mState->gridHeight == 0) {
+            pixelData->x = mState->minimumPoint.x;
             pixelData->y += sideLength;
         } else {
             pixelData->x += sideLength;
@@ -104,8 +111,7 @@ void PixelGrid::render() {
         } else {
             pixelColor = pixel->getOutlineColor();
             SDL_SetRenderDrawColorFloat(mSDLRenderer, pixelColor.r,
-                                        pixelColor.g, pixelColor.b,
-                                        SDL_ALPHA_OPAQUE);
+                                        pixelColor.g, pixelColor.b, 0.5f);
             SDL_RenderRect(mSDLRenderer, &pixel->getData());
         };
     };
@@ -119,16 +125,16 @@ void PixelGrid::handleMouseEvent(SDL_Event *event, SDL_FColor &color) {
 
     mousePos = {(int)event->motion.x, (int)event->motion.y};
 
-    if (!isWithinGrid(&mousePos, &mGridMinimumPoint, &mGridMaximumPoint))
+    if (!isWithinGrid(&mousePos, &mState->minimumPoint, &mState->maximumPoint))
         return;
 
-    gridX = mousePos.x - mGridMinimumPoint.x;
+    gridX = mousePos.x - mState->minimumPoint.x;
     gridX = std::floor(gridX / 25);
 
-    gridY = mousePos.y - mGridMinimumPoint.y;
+    gridY = mousePos.y - mState->minimumPoint.y;
     gridY = std::floor(gridY / 25);
 
-    pixelIndex = gridX + (mProps.gridWidth * gridY);
+    pixelIndex = gridX + (mState->gridWidth * gridY);
     // TODO: Somehow figure out how to have a "SELECTION" overlay on the current
     // pixel? maybe move around a seperate from the grid SDL_Rect that is half
     // transparent and grey? this way individual pixels don't store a seperate

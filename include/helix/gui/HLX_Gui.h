@@ -19,7 +19,7 @@ void shutdown();
 
 void handleEvent(SDL_Event *event);
 
-void renderPalette(ImVec4 &rawColor);
+void renderPalette(ImVec4 &rawColor, SDL_FColor &color);
 void renderToolbar();
 
 }; // namespace GUI

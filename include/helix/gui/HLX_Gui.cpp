@@ -64,12 +64,12 @@ void shutdown() {
 // OR give a pointer/ref to the brush color? mabybe potentially even just give
 // renderPalette a reference to a Brush struct?
 
-void renderPalette(ImVec4 &rawColor) {
+void renderPalette(ImVec4 &rawColor, SDL_FColor &color) {
     ImGui::Begin("ColorPicker");
     ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor);
 
     if (ImGui::IsItemEdited()) {
-        SDL_Log("Color picker was edited");
+        color = {rawColor.x, rawColor.y, rawColor.z, rawColor.w};
     };
 
     ImGui::End();

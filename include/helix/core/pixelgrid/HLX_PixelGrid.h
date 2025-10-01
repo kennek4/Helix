@@ -12,20 +12,30 @@ namespace HLX {
 
 const static Uint32 SDL_EVENT_USER_ZOOM = SDL_RegisterEvents(1);
 
-typedef struct PixelGridProperties {
-    int *windowWidth = nullptr;
-    int *windowHeight = nullptr;
+typedef float ZoomLevel;
 
+typedef struct PixelGridState {
     int gridWidth = 0;
     int gridHeight = 0;
-    float currentZoom = 1.0f;
-    float minZoom = 0.5f;
-    float maxZoom = 2.0f;
-} PixelGridProperties;
+
+    SDL_Point minimumPoint{0, 0};
+    SDL_Point middlePoint{0, 0};
+    SDL_Point maximumPoint{0, 0};
+
+    const ZoomLevel maxZoom{2.0f};
+    const ZoomLevel minZoom{0.5f};
+    ZoomLevel currentZoom{1.0f};
+
+    PixelGridState() {};
+    PixelGridState(const int gridWidth, const int gridHeight)
+        : gridWidth(gridWidth), gridHeight(gridHeight) {};
+
+} PixelGridState;
 
 class PixelGrid {
   public:
-    PixelGrid(PixelGridProperties props, SDL_Renderer *renderer);
+    PixelGrid(PixelGridState *state, SDL_Renderer *renderer, int &windowWidth,
+              int &windowHeight);
     ~PixelGrid();
 
     void create();
@@ -37,15 +47,10 @@ class PixelGrid {
     void handleResize(SDL_Event *event);
 
   private:
-    PixelGridProperties mProps;
-
-    SDL_Point mGridMinimumPoint{0, 0};
-    SDL_Point mGridMiddlePoint{0, 0};
-    SDL_Point mGridMaximumPoint{0, 0};
+    SDL_Renderer *mSDLRenderer{nullptr};
+    PixelGridState *mState{nullptr};
 
     std::vector<HLX::Pixel *> mPixels{};
     Pixel *mHoveredPixel = nullptr;
-
-    SDL_Renderer *mSDLRenderer;
 };
 }; // namespace HLX
