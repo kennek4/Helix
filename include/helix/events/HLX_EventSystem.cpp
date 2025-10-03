@@ -1,0 +1,61 @@
+#include "HLX_EventSystem.h"
+#include "HLX_Subscriber.h"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_stdinc.h>
+#include <map>
+#include <print>
+#include <set>
+
+inline bool isSubscriberInTopic(Uint32 *type, HLX::Subscriber *subscriber,
+                                std::map<Uint32, HLX::Topic *> *map) {
+    if (!map->contains(*type)) {
+        return false; // No topic with given event
+    };
+    return map->at(*type)->subscribers.contains(subscriber);
+};
+
+namespace HLX {
+
+EventSystem::~EventSystem() {
+    for (auto pair : mEventToTopic) {
+        pair.second->subscribers.clear();
+        delete pair.second;
+    };
+
+    mEventToTopic.clear();
+};
+
+void EventSystem::subscribe(Uint32 type, Subscriber *subscriber) {
+    if (!mEventToTopic.contains(type)) {
+        // Create the topic
+        mEventToTopic.insert({type, new Topic(type)});
+    } else if (isSubscriberInTopic(&type, subscriber, &mEventToTopic)) {
+        return;
+    };
+
+    mEventToTopic.at(type)->subscribers.insert(subscriber);
+};
+
+void EventSystem::unsubscribe(Uint32 type, Subscriber *subscriber) {
+    if (!mEventToTopic.contains(type))
+        return; // No topic with the given event type
+    if (!isSubscriberInTopic(&type, subscriber, &mEventToTopic)) {
+        return;
+    };
+
+    mEventToTopic.at(type)->subscribers.erase(subscriber);
+};
+
+void EventSystem::publishToTopic(SDL_Event *event) {
+    if (!mEventToTopic.contains(event->type)) {
+        std::println("no topic exists!");
+        return;
+    }
+
+    for (Subscriber *subscriber : mEventToTopic.at(event->type)->subscribers) {
+        subscriber->onNotify(event);
+    };
+};
+
+}; // namespace HLX
