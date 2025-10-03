@@ -1,10 +1,12 @@
 project(HELIX_INCLUDE_CMAKE)
 
 include(core/CMakeLists.txt)
+include(events/CMakeLists.txt)
 include(gui/CMakeLists.txt)
 
-set(HELIX_HEADER ${HELIX_CORE_HEADER} ${HELIX_GUI_HEADER})
-set(HELIX_SRC ${HELIX_CORE_SRC} ${HELIX_GUI_SRC})
+set(HELIX_HEADER ${HELIX_CORE_HEADER} ${HELIX_EVENTS_HEADER}
+                 ${HELIX_GUI_HEADER})
+set(HELIX_SRC ${HELIX_CORE_SRC} ${HELIX_EVENTS_SRC} ${HELIX_GUI_SRC})
 list(APPEND HELIX_SRC ${HELIX_HEADER})
 
 # SDL
@@ -34,5 +36,5 @@ elseif(WIN32)
   target_compile_definitions(HELIX_LIB PUBLIC HELIX_PLATFORM_WINDOWS)
 endif()
 
-target_include_directories(HELIX_LIB PUBLIC core gui)
+target_include_directories(HELIX_LIB PUBLIC core events gui)
 target_link_libraries(HELIX_LIB imgui SDL3::SDL3)
