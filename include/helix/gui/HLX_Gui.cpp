@@ -1,9 +1,4 @@
 #include "HLX_Gui.h"
-#include "imgui.h"
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_stdinc.h>
 
 namespace HLX {
 namespace GUI {

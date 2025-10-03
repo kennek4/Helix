@@ -1,12 +1,4 @@
 #include "HLX_PixelGrid.h"
-#include "HLX_Pixel.h"
-#include <SDL3/SDL_blendmode.h>
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_rect.h>
-#include <SDL3/SDL_render.h>
-#include <cmath>
 
 bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     static bool inDomain{false};

@@ -1,8 +1,4 @@
 #include "HLX_Pixel.h"
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_rect.h>
 
 namespace HLX {
 Pixel::Pixel(const SDL_FRect &data) { mData = data; };

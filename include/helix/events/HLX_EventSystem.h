@@ -1,10 +1,7 @@
 #pragma once
 
+#include "../HLX_pch.h"
 #include "HLX_Subscriber.h"
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_stdinc.h>
-#include <map>
-#include <set>
 
 namespace HLX {
 typedef struct Topic {

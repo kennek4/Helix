@@ -1,9 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_rect.h>
-#include <map>
+#include "../HLX_pch.h"
 
 namespace HLX {
 

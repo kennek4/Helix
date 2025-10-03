@@ -1,11 +1,5 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Subscriber.h"
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_stdinc.h>
-#include <map>
-#include <print>
-#include <set>
 
 inline bool isSubscriberInTopic(Uint32 *type, HLX::Subscriber *subscriber,
                                 std::map<Uint32, HLX::Topic *> *map) {
