@@ -1,5 +1,6 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Subscriber.h"
+#include <SDL3/SDL_log.h>
 
 inline bool isSubscriberInTopic(Uint32 *type, HLX::Subscriber *subscriber,
                                 std::map<Uint32, HLX::Topic *> *map) {
@@ -25,6 +26,7 @@ void EventSystem::subscribe(Uint32 type, Subscriber *subscriber) {
         // Create the topic
         mEventToTopic.insert({type, new Topic(type)});
     } else if (isSubscriberInTopic(&type, subscriber, &mEventToTopic)) {
+
         return;
     };
 
@@ -43,7 +45,8 @@ void EventSystem::unsubscribe(Uint32 type, Subscriber *subscriber) {
 
 void EventSystem::publishToTopic(SDL_Event *event) {
     if (!mEventToTopic.contains(event->type)) {
-        std::println("no topic exists!");
+        // Discard event, no listeners.
+        SDL_Log("Event %d, has no listeners", event->type);
         return;
     }
 

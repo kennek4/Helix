@@ -25,6 +25,7 @@ class A : public HLX::Subscriber {
     };
 
     bool onNotify(SDL_Event *event) override {
+
         SDL_Log("Recieved SDL_EVENT_MOUSE_MOTION event!");
         previousX = currentX;
         previousy = currentY;

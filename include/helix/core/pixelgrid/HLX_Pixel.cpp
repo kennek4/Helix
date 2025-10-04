@@ -21,11 +21,11 @@ void Pixel::setOutlineColor(const SDL_FColor newColor) {
 
 void Pixel::setFillColor(const SDL_FColor &newColor) { mFillColor = newColor; };
 
-void Pixel::handleMouseClick(SDL_Event *event, const SDL_FColor &fillColor) {
+void Pixel::handleMouseClick(SDL_Event *event, SDL_FColor *fillColor) {
     if (mPixelState != PixelState::FILLED)
         mPixelState = PixelState::FILLED;
 
-    mFillColor = {fillColor.r, fillColor.g, fillColor.b, fillColor.a};
+    mFillColor = {fillColor->r, fillColor->g, fillColor->b, fillColor->a};
 };
 
 void Pixel::handleMouseHover(SDL_Event *event) {};

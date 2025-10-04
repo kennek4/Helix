@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../HLX_pch.h"
+#include <SDL3/SDL_pixels.h>
 
 namespace HLX {
 
@@ -48,7 +49,7 @@ class Pixel {
     void setFillColor(const SDL_FColor &newColor);
 
     void handleMouseHover(SDL_Event *event);
-    void handleMouseClick(SDL_Event *event, const SDL_FColor &fillColor);
+    void handleMouseClick(SDL_Event *event, SDL_FColor *fillColor);
 
   private:
     PixelState mPixelState = PixelState::EMPTY;

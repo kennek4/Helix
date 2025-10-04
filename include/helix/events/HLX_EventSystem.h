@@ -5,10 +5,9 @@
 
 namespace HLX {
 typedef struct Topic {
+    Topic(Uint32 type) : type(type) {};
     Uint32 type;
     std::set<Subscriber *> subscribers{};
-    Topic(Uint32 type) : type(type) {};
-
 } Topic;
 
 class EventSystem {

@@ -2,6 +2,7 @@
 
 // C++
 #include <cmath>
+#include <functional>
 #include <map>
 #include <print>
 #include <set>

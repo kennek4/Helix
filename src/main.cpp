@@ -1,6 +1,9 @@
+#include "HLX_EventSystem.h"
 #include "HLX_Gui.h"
 #include "Helix.h"
 #include "pixelgrid/HLX_PixelGrid.h"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_log.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
@@ -77,16 +80,19 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // Process Input
     // NOTE: This allows mouse painting / dragging
     if (isMouseDown) {
-        SDL_Event mouseDragEvent;
+        SDL_Event hlxMouseUp;
         float x, y;
 
-        SDL_zero(mouseDragEvent);
-        mouseDragEvent.type = SDL_EVENT_MOUSE_BUTTON_DOWN;
+        SDL_zero(hlxMouseUp);
+        hlxMouseUp.type = SDL_EVENT_USER;
         SDL_GetMouseState(&x, &y);
-        mouseDragEvent.motion.x = x;
-        mouseDragEvent.motion.y = y;
 
-        SDL_PushEvent(&mouseDragEvent);
+        hlxMouseUp.motion.x = x;
+        hlxMouseUp.motion.y = y;
+        hlxMouseUp.user.data1 = &helix.brush.fillColor;
+
+        SDL_Log("Pushing EVENT_BRUSH_DOWN event!");
+        SDL_PushEvent(&hlxMouseUp);
     };
 
     // helixPixelGrid->handleMouseDrag(isMouseDown);
@@ -112,29 +118,18 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 // Event Handling
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
+
     if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         isMouseDown = true;
     } else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
         isMouseDown = false;
     };
 
-    switch (event->type) {
-    case SDL_EVENT_QUIT:
+    if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_FAILURE;
-        break;
-    case SDL_EVENT_WINDOW_RESIZED:
-        helix.pixelGrid->handleResize(event);
-        break;
-    case SDL_EVENT_MOUSE_MOTION:
-        // TODO: Move "selection square/pixel" to mouse position
-        // helix.selectionCursor->handleMouseEvent(event);
-    case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        helix.pixelGrid->handleMouseEvent(event, helix.brush.fillColor);
-        break;
-    case SDL_EVENT_USER:
-        helix.pixelGrid->handleZoom(event);
-    }
+    };
 
+    HLX::EventSystem::getInstance().publishToTopic(event);
     HLX::GUI::handleEvent(event);
     return SDL_APP_CONTINUE;
 };

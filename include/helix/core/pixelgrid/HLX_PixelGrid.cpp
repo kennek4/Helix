@@ -1,4 +1,9 @@
 #include "HLX_PixelGrid.h"
+#include "HLX_EventSystem.h"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_pixels.h>
+#include <any>
 
 bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     static bool inDomain{false};
@@ -65,12 +70,46 @@ PixelGrid::PixelGrid(PixelGridState *state, SDL_Renderer *renderer,
     };
 
     delete pixelData;
+
+    HLX::EventSystem::getInstance().subscribe(SDL_EVENT_WINDOW_RESIZED, this);
+    mCallbackHandler.registerCallback(
+        SDL_EVENT_WINDOW_RESIZED,
+        [this](SDL_Event *event) -> void { std::println("Window Resized!"); });
+
+    HLX::EventSystem::getInstance().subscribe(SDL_EVENT_MOUSE_MOTION, this);
+    mCallbackHandler.registerCallback(
+        SDL_EVENT_MOUSE_MOTION, [this](SDL_Event *event) -> void {
+            mState->mousePos = {(int)event->motion.x, (int)event->motion.y};
+        });
+
+    HLX::EventSystem::getInstance().subscribe(SDL_EVENT_USER, this);
+    mCallbackHandler.registerCallback(
+        SDL_EVENT_USER, [this](SDL_Event *event) -> void {
+            if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
+                              &mState->maximumPoint)) {
+
+                SDL_Log("Not a valid point!");
+                return;
+            };
+
+            int pixelIndex = getPixelIndex();
+            const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
+            static SDL_FColor *color =
+                reinterpret_cast<SDL_FColor *>(event->user.data1);
+
+            mPixels.at(pixelIndex)->handleMouseClick(event, color);
+        });
 };
 
 PixelGrid::~PixelGrid() {
     for (Pixel *pixel : mPixels) {
         delete pixel;
     };
+};
+
+bool PixelGrid::onNotify(SDL_Event *event) {
+    mCallbackHandler.invokeCallback(event);
+    return true;
 };
 
 void PixelGrid::reset() {
@@ -131,12 +170,6 @@ void PixelGrid::handleMouseEvent(SDL_Event *event, SDL_FColor &color) {
     // pixel? maybe move around a seperate from the grid SDL_Rect that is half
     // transparent and grey? this way individual pixels don't store a seperate
     // bool
-    if (event->type == SDL_EVENT_MOUSE_MOTION) {
-        mPixels.at(pixelIndex)->handleMouseHover(event);
-    } else if (SDL_EVENT_MOUSE_BUTTON_DOWN) {
-        static const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        mPixels.at(pixelIndex)->handleMouseClick(event, color);
-    };
 };
 
 void PixelGrid::handleZoom(SDL_Event *event) {
@@ -145,5 +178,18 @@ void PixelGrid::handleZoom(SDL_Event *event) {
 };
 
 void PixelGrid::handleResize(SDL_Event *event) { return; };
+
+int PixelGrid::getPixelIndex() {
+    static int gridX{0};
+    static int gridY{0};
+
+    gridX = mState->mousePos.x - mState->minimumPoint.x;
+    gridX = std::floor(gridX / 25);
+
+    gridY = mState->mousePos.y - mState->minimumPoint.y;
+    gridY = std::floor(gridY / 25);
+
+    return gridX + (mState->gridWidth * gridY);
+};
 
 }; // namespace HLX
