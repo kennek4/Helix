@@ -1,14 +1,19 @@
-#include "HLX_EventSystem.h"
-#include "HLX_Gui.h"
 #include "Helix.h"
-#include "pixelgrid/HLX_PixelGrid.h"
-#include <SDL3/SDL_events.h>
+#include "imgui.h"
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_video.h>
+#include <cstddef>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
 
 static bool isMouseDown = false;
+
+static SDL_Surface *preview = nullptr;
 
 constexpr SDL_InitFlags initFlags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 constexpr SDL_WindowFlags winFlags =
@@ -70,12 +75,29 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     helix.backgroundRect.w = (float)helix.pixelGridState.gridWidth * 25;
     helix.backgroundRect.h = (float)helix.pixelGridState.gridHeight * 25;
 
+    preview = SDL_CreateSurface(helix.pixelGridState.gridWidth * 25,
+                                helix.pixelGridState.gridHeight * 25,
+                                SDL_PIXELFORMAT_RGBA32);
+
     return SDL_APP_CONTINUE;
 };
 
 // Main Application Loop
 SDL_AppResult SDL_AppIterate(void *appstate) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
+
+    // helixPixelGrid->handleMouseDrag(isMouseDown);
+
+    // NOTE: Clear screen
+    SDL_SetRenderDrawColor(helix.renderer, 255, 255, 255,
+                           SDL_ALPHA_OPAQUE); /* black, full alpha */
+    SDL_RenderClear(helix.renderer);          /* start with a blank canvas. */
+    SDL_RenderTextureTiled(helix.renderer, helix.background, NULL,
+                           helix.backgroundTilingScale, &helix.backgroundRect);
+
+    HLX::GUI::newFrame();
+    HLX::GUI::renderToolbar();
+    HLX::GUI::renderPalette(helix.brush.rawColor, helix.brush.fillColor);
 
     // Process Input
     // NOTE: This allows mouse painting / dragging
@@ -91,24 +113,28 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         hlxMouseUp.motion.y = y;
         hlxMouseUp.user.data1 = &helix.brush.fillColor;
 
-        SDL_Log("Pushing EVENT_BRUSH_DOWN event!");
         SDL_PushEvent(&hlxMouseUp);
     };
 
-    // helixPixelGrid->handleMouseDrag(isMouseDown);
-
-    // NOTE: Clear screen
-    SDL_SetRenderDrawColor(helix.renderer, 255, 255, 255,
-                           SDL_ALPHA_OPAQUE); /* black, full alpha */
-    SDL_RenderClear(helix.renderer);          /* start with a blank canvas. */
-    SDL_RenderTextureTiled(helix.renderer, helix.background, NULL,
-                           helix.backgroundTilingScale, &helix.backgroundRect);
-
-    HLX::GUI::newFrame();
-    HLX::GUI::renderToolbar();
-    HLX::GUI::renderPalette(helix.brush.rawColor, helix.brush.fillColor);
-
     helix.pixelGrid->render();
+
+    ImGui::Begin("Save button");
+
+    if (ImGui::Button("Save")) {
+        SDL_Log("Saving img...");
+        helix.pixelGrid->saveToSurface(*preview);
+    };
+
+    ImGui::End();
+
+    SDL_Rect r = {0, 0, 32, 32};
+
+    SDL_BlitSurface(preview, NULL, SDL_GetWindowSurface(helix.window), &r);
+    SDL_ScaleSurface(preview, 32, 32, SDL_SCALEMODE_NEAREST);
+    SDL_Texture *tex = SDL_CreateTextureFromSurface(helix.renderer, preview);
+    SDL_FRect fr = {0.0f, 0.0f, 32.0f, 32.0f};
+    SDL_RenderTexture(helix.renderer, tex, NULL, &fr);
+    SDL_DestroyTexture(tex);
 
     HLX::GUI::renderFrame(helix.renderer);
     SDL_RenderPresent(helix.renderer); /* put it all on the screen! */
@@ -136,6 +162,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
+    SDL_DestroySurface(preview);
     SDL_DestroyTexture(helix.background);
     SDL_DestroyRenderer(helix.renderer);
     SDL_DestroyWindow(helix.window);

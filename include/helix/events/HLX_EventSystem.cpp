@@ -46,7 +46,6 @@ void EventSystem::unsubscribe(Uint32 type, Subscriber *subscriber) {
 void EventSystem::publishToTopic(SDL_Event *event) {
     if (!mEventToTopic.contains(event->type)) {
         // Discard event, no listeners.
-        SDL_Log("Event %d, has no listeners", event->type);
         return;
     }
 

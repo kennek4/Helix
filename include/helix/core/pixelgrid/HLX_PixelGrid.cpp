@@ -1,9 +1,9 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_EventSystem.h"
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_log.h>
+#include "HLX_Pixel.h"
 #include <SDL3/SDL_pixels.h>
-#include <any>
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_surface.h>
 
 bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     static bool inDomain{false};
@@ -88,7 +88,6 @@ PixelGrid::PixelGrid(PixelGridState *state, SDL_Renderer *renderer,
             if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
                               &mState->maximumPoint)) {
 
-                SDL_Log("Not a valid point!");
                 return;
             };
 
@@ -148,36 +147,26 @@ void PixelGrid::render() {
     };
 };
 
-void PixelGrid::handleMouseEvent(SDL_Event *event, SDL_FColor &color) {
-    static SDL_Point mousePos{0, 0};
-    static int gridX{0};
-    static int gridY{0};
-    static int pixelIndex{0};
+void PixelGrid::saveToSurface(SDL_Surface &surface) {
+    int x, y = 0;
 
-    mousePos = {(int)event->motion.x, (int)event->motion.y};
+    Uint8 *pixels = new Uint8[mPixels.size()]();
 
-    if (!isWithinGrid(&mousePos, &mState->minimumPoint, &mState->maximumPoint))
-        return;
+    for (int pos = 0; pos < mPixels.capacity(); pos++) {
+        if (pos % mState->gridHeight == 0) {
+            x = 0;
+            y++;
+        } else {
+            x++;
+        }
 
-    gridX = mousePos.x - mState->minimumPoint.x;
-    gridX = std::floor(gridX / 25);
-
-    gridY = mousePos.y - mState->minimumPoint.y;
-    gridY = std::floor(gridY / 25);
-
-    pixelIndex = gridX + (mState->gridWidth * gridY);
-    // TODO: Somehow figure out how to have a "SELECTION" overlay on the current
-    // pixel? maybe move around a seperate from the grid SDL_Rect that is half
-    // transparent and grey? this way individual pixels don't store a seperate
-    // bool
+        // SDL_Log("Writing Pixel at %d, %d", x, y);
+        const SDL_FColor &pixelFillColor = mPixels.at(pos)->getFillColor();
+        SDL_WriteSurfacePixel(&surface, x, y, pixelFillColor.r,
+                              pixelFillColor.g, pixelFillColor.b,
+                              pixelFillColor.a);
+    };
 };
-
-void PixelGrid::handleZoom(SDL_Event *event) {
-    // ZOOOOOOmH
-    return;
-};
-
-void PixelGrid::handleResize(SDL_Event *event) { return; };
 
 int PixelGrid::getPixelIndex() {
     static int gridX{0};

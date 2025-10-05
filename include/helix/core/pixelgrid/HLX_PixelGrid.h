@@ -3,7 +3,7 @@
 #include "HLX_EventCallbackHandler.h"
 #include "HLX_Pixel.h"
 #include "HLX_Subscriber.h"
-#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_surface.h>
 
 namespace HLX {
 
@@ -43,11 +43,9 @@ class PixelGrid : public Subscriber {
 
     void create();
     void reset();
-
     void render();
-    void handleMouseEvent(SDL_Event *event, SDL_FColor &color);
-    void handleZoom(SDL_Event *event);
-    void handleResize(SDL_Event *event);
+
+    void saveToSurface(SDL_Surface &surface);
 
   private:
     SDL_Renderer *mSDLRenderer{nullptr};

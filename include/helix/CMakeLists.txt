@@ -38,5 +38,11 @@ endif()
 
 target_precompile_headers(HELIX_LIB PRIVATE HLX_pch.h)
 
-target_include_directories(HELIX_LIB PUBLIC core events gui)
+target_include_directories(
+  HELIX_LIB
+  PUBLIC ${HELIX_ROOT}/include/helix/core
+  PUBLIC ${HELIX_ROOT}/include/helix/core/pixelgrid
+  PUBLIC ${HELIX_ROOT}/include/helix/core/window
+  PUBLIC ${HELIX_ROOT}/include/helix/events
+  PUBLIC ${HELIX_ROOT}/include/helix/gui)
 target_link_libraries(HELIX_LIB imgui SDL3::SDL3)

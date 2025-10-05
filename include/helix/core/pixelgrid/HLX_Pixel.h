@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include <SDL3/SDL_pixels.h>
 
 namespace HLX {
 

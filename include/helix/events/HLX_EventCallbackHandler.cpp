@@ -1,11 +1,8 @@
 #include "HLX_EventCallbackHandler.h"
-#include <SDL3/SDL_log.h>
-#include <functional>
 
 namespace HLX {
 void EventCallbackHandler::invokeCallback(SDL_Event *event) {
     if (!mCallbacks.contains(event->type)) {
-        SDL_Log("Event of ID, %d, has no callback", event->type);
         return; // No callback for the given event type was registered
     };
 

@@ -1,13 +1,11 @@
 #pragma once
 
-#include "imgui.h"
-#include "pixelgrid/HLX_PixelGrid.h"
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_rect.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_video.h>
-#include <vector>
+#include <HLX_EventCallbackHandler.h>
+#include <HLX_EventSystem.h>
+#include <HLX_Gui.h>
+#include <HLX_Pixel.h>
+#include <HLX_PixelGrid.h>
+#include <HLX_Subscriber.h>
 
 namespace HLX {
 
@@ -56,9 +54,5 @@ typedef struct HelixState {
     PixelGridState pixelGridState{};
 
 } HelixState;
-
-inline void changeBrushColor(ImVec4 &rawColor, SDL_FColor &brushColor) {
-    brushColor = {rawColor.x, rawColor.y, rawColor.z, rawColor.w};
-};
 
 }; // namespace HLX
