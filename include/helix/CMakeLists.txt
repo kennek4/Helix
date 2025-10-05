@@ -45,4 +45,4 @@ target_include_directories(
   PUBLIC ${HELIX_ROOT}/include/helix/core/window
   PUBLIC ${HELIX_ROOT}/include/helix/events
   PUBLIC ${HELIX_ROOT}/include/helix/gui)
-target_link_libraries(HELIX_LIB imgui SDL3::SDL3)
+target_link_libraries(HELIX_LIB imgui SDL3::SDL3 stb_image)
