@@ -1,9 +1,12 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_EventSystem.h"
 #include "HLX_Pixel.h"
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_surface.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     static bool inDomain{false};
@@ -148,24 +151,34 @@ void PixelGrid::render() {
 };
 
 void PixelGrid::saveToSurface(SDL_Surface &surface) {
-    int x, y = 0;
+    Uint8 *pixels = new Uint8[mPixels.size() * STBI_rgb_alpha]();
 
-    Uint8 *pixels = new Uint8[mPixels.size()]();
+    int r, g, b, a;
 
+    int index = 0;
     for (int pos = 0; pos < mPixels.capacity(); pos++) {
-        if (pos % mState->gridHeight == 0) {
-            x = 0;
-            y++;
-        } else {
-            x++;
-        }
-
-        // SDL_Log("Writing Pixel at %d, %d", x, y);
-        const SDL_FColor &pixelFillColor = mPixels.at(pos)->getFillColor();
-        SDL_WriteSurfacePixel(&surface, x, y, pixelFillColor.r,
-                              pixelFillColor.g, pixelFillColor.b,
-                              pixelFillColor.a);
+        const SDL_FColor fillColor = mPixels.at(pos)->getFillColor();
+        pixels[index++] = (int)(fillColor.r * 255.99f);
+        pixels[index++] = (int)(fillColor.g * 255.99f);
+        pixels[index++] = (int)(fillColor.b * 255.99f);
+        pixels[index++] = (int)(fillColor.a * 255.99f);
     };
+
+    SDL_Log("Saving Image!");
+    std::string path = SDL_GetBasePath();
+    path += "SavedImage.png";
+
+    int success = stbi_write_png(path.c_str(), mState->gridWidth,
+                                 mState->gridWidth, STBI_rgb_alpha, pixels,
+                                 mState->gridWidth * STBI_rgb_alpha);
+
+    if (success == 0) {
+        SDL_Log("Saving image failed...");
+    } else {
+        SDL_Log("Saving image success!");
+    };
+
+    delete[] pixels;
 };
 
 int PixelGrid::getPixelIndex() {

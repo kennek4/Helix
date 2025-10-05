@@ -3,7 +3,6 @@
 #include "HLX_EventCallbackHandler.h"
 #include "HLX_Pixel.h"
 #include "HLX_Subscriber.h"
-#include <SDL3/SDL_surface.h>
 
 namespace HLX {
 
