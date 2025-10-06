@@ -3,6 +3,8 @@
 #include "HLX_EventCallbackHandler.h"
 #include "HLX_Pixel.h"
 #include "HLX_Subscriber.h"
+#include "HLX_Window.h"
+#include <vector>
 
 namespace HLX {
 
@@ -13,6 +15,8 @@ const static Uint32 EVENT_BRUSH_UP = SDL_RegisterEvents(1);
 typedef float ZoomLevel;
 
 typedef struct PixelGridState {
+    int windowWidth = 0;
+    int windowHeight = 0;
     int gridWidth = 0;
     int gridHeight = 0;
 
@@ -25,6 +29,12 @@ typedef struct PixelGridState {
     ZoomLevel currentZoom{1.0f};
 
     SDL_Point mousePos{0, 0};
+    float mouseScaleX = 1.0f;
+    float mouseScaleY = 1.0f;
+
+    SDL_Texture *background{nullptr};
+    SDL_FRect backgroundRect = {0, 0, 0, 0};
+    float backgroundTilingScale{1.0f};
 
     PixelGridState() {};
     PixelGridState(const int gridWidth, const int gridHeight)
@@ -34,26 +44,27 @@ typedef struct PixelGridState {
 
 class PixelGrid : public Subscriber {
   public:
-    PixelGrid(PixelGridState *state, SDL_Renderer *renderer, int &windowWidth,
+    PixelGrid(PixelGridState *state, SDLProps &sdlProps, int &windowWidth,
               int &windowHeight);
     ~PixelGrid();
 
     bool onNotify(SDL_Event *event) override;
 
-    void create();
+    bool init();
     void reset();
     void render();
 
-    void saveToSurface(SDL_Surface &surface);
+    void saveImage();
 
   private:
-    SDL_Renderer *mSDLRenderer{nullptr};
+    SDLProps *mSDLProps{nullptr};
     PixelGridState *mState{nullptr};
 
     EventCallbackHandler mCallbackHandler{this};
-
     std::vector<HLX::Pixel *> mPixels{};
-    Pixel *mHoveredPixel = nullptr;
+
+    void calculateBounds(int &newWidth, int &newHeight);
+    void registerCallbacks();
 
     int getPixelIndex();
 };

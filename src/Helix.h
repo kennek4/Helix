@@ -6,6 +6,7 @@
 #include <HLX_Pixel.h>
 #include <HLX_PixelGrid.h>
 #include <HLX_Subscriber.h>
+#include <HLX_Window.h>
 
 namespace HLX {
 
@@ -34,12 +35,12 @@ typedef struct Brush {
 
 typedef struct HelixState {
     // SDL
-    SDL_Window *window{nullptr};
-    SDL_Renderer *renderer{nullptr};
+    SDLProps sdlProps;
     SDL_Texture *background{nullptr};
     SDL_FRect backgroundRect{0, 0, 0, 0};
 
     // Window Data
+    WindowProps windowProps;
     float backgroundTilingScale{1.0f};
     int windowWidth{1280};
     int windowHeight{720};
@@ -50,6 +51,7 @@ typedef struct HelixState {
     Brush brush;
 
     // HLX
+    Window *window{nullptr};
     PixelGrid *pixelGrid{nullptr};
     PixelGridState pixelGridState{};
 

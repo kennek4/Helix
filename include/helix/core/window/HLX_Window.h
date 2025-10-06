@@ -4,19 +4,28 @@
 
 namespace HLX {
 
-typedef struct SDLData {
-    SDL_Window *window{nullptr};
-    SDL_Renderer *renderer{nullptr};
-} SDLData;
+static bool isHelixWindowInitialized = false;
+
+typedef struct SDLProps {
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+} SDLProps;
+
+typedef struct WindowProps {
+    int width;
+    int height;
+} WindowProps;
 
 class Window {
   public:
-    Window();
+    Window(SDLProps &sdlProps, WindowProps &windowProps);
     ~Window();
 
-    SDLData &getSDLData();
+    bool init();
+    bool shutdown();
 
   private:
-    SDLData mSDLData;
+    SDLProps *mSDLProps{nullptr};
+    WindowProps *mWindowProps{nullptr};
 };
 }; // namespace HLX
