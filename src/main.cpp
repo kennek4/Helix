@@ -1,9 +1,5 @@
-#include "HLX_Window.h"
+#include "HLX_Toolbar.h"
 #include "Helix.h"
-#include "imgui.h"
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_video.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
@@ -33,9 +29,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_Log("Initializing PixelGrid...");
     helix.pixelGridState.gridWidth = 32;
     helix.pixelGridState.gridHeight = 32;
-    helix.pixelGrid =
-        new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps,
-                           helix.windowProps.width, helix.windowProps.height);
+    helix.pixelGrid = new HLX::PixelGrid(
+        &helix.pixelGridState, helix.sdlProps, helix.windowProps.width,
+        helix.windowProps.height, helix.palette.getPaletteData());
 
     if (!helix.pixelGrid->init()) {
         SDL_Log("%s", SDL_GetError());
@@ -53,21 +49,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // Process Input
     // NOTE: This allows mouse painting / dragging
     if (isMouseDown) {
-        SDL_Event hlxMouseUp;
-        float x, y;
-
-        SDL_zero(hlxMouseUp);
-        hlxMouseUp.type = SDL_EVENT_USER;
-        SDL_GetMouseState(&x, &y);
-
-        hlxMouseUp.motion.x = x;
-        hlxMouseUp.motion.y = y;
-        hlxMouseUp.user.data1 = &helix.brush.fillColor;
-
-        SDL_PushEvent(&hlxMouseUp);
+        helix.toolbar.useTool();
     };
-
-    // helixPixelGrid->handleMouseDrag(isMouseDown);
 
     // NOTE: Clear screen
     SDL_SetRenderDrawColor(helix.sdlProps.renderer, 255, 255, 255,
@@ -76,7 +59,17 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     HLX::GUI::newFrame();
     HLX::GUI::renderToolbar();
-    HLX::GUI::renderPalette(helix.brush.rawColor, helix.brush.fillColor);
+    HLX::GUI::renderPalette(helix.palette.getPaletteData()->color);
+
+    ImGui::Begin("Tools");
+    if (ImGui::Button("Brush")) {
+        helix.toolbar.setTool(HLX::HELIX_EVENT_BRUSH);
+    };
+
+    if (ImGui::Button("Eraser")) {
+        helix.toolbar.setTool(HLX::HELIX_EVENT_ERASER);
+    };
+    ImGui::End();
 
     ImGui::Begin("Save button");
 
@@ -124,7 +117,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
-    SDL_DestroyTexture(helix.background);
+    // SDL_DestroyTexture(helix.pixelGrid.);
     SDL_DestroyRenderer(helix.sdlProps.renderer);
     SDL_DestroyWindow(helix.sdlProps.window);
     SDL_Quit();

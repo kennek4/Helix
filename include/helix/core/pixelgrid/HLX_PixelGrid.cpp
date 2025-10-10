@@ -1,7 +1,10 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_EventSystem.h"
+#include "HLX_Palette.h"
 #include "HLX_Pixel.h"
+#include "HLX_Toolbar.h"
 #include "HLX_Window.h"
+#include <SDL3/SDL_log.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -21,8 +24,9 @@ bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
 
 namespace HLX {
 PixelGrid::PixelGrid(PixelGridState *state, SDLProps &sdlProps,
-                     int &windowWidth, int &windowHeight)
-    : mState(state), mSDLProps(&sdlProps) {
+                     int &windowWidth, int &windowHeight,
+                     PaletteData *paletteData)
+    : mState(state), mSDLProps(&sdlProps), mPaletteData(paletteData) {
 
     SDL_Log("Reserving pixel amounts...");
     const int TOTAL_PIXEL_COUNT = mState->gridWidth * mState->gridHeight;
@@ -33,7 +37,8 @@ PixelGrid::PixelGrid(PixelGridState *state, SDLProps &sdlProps,
     mState->windowHeight = windowHeight;
 
     calculateBounds(windowWidth, windowHeight);
-    registerCallbacks();
+    registerWindowCallbacks();
+    registerToolCallbacks();
 };
 
 PixelGrid::~PixelGrid() {
@@ -217,7 +222,7 @@ void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
     delete maxY;
 };
 
-void PixelGrid::registerCallbacks() {
+void PixelGrid::registerWindowCallbacks() {
     auto handleWindowResize = [this](SDL_Event *event) -> void {
         mState->mouseScaleX =
             ((float)event->window.data1 / (float)mState->windowWidth);
@@ -254,22 +259,7 @@ void PixelGrid::registerCallbacks() {
 
     auto handleMouseMotion = [this](SDL_Event *event) -> void {
         SDL_ConvertEventToRenderCoordinates(mSDLProps->renderer, event);
-        mState->mousePos = {static_cast<int>(event->motion.x),
-                            static_cast<int>(event->motion.y)};
-    };
-
-    auto handleBrushEvent = [this](SDL_Event *event) -> void {
-        if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
-                          &mState->maximumPoint)) {
-            return; // Mouse Position is out of grid bounds
-        };
-
-        int pixelIndex = getPixelIndex();
-        const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        static SDL_FColor *color =
-            reinterpret_cast<SDL_FColor *>(event->user.data1);
-
-        mPixels.at(pixelIndex)->handleMouseClick(event, color);
+        mState->mousePos = {(int)(event->motion.x), (int)(event->motion.y)};
     };
 
     HLX::EventSystem::getInstance().subscribe(SDL_EVENT_WINDOW_RESIZED, this);
@@ -279,9 +269,36 @@ void PixelGrid::registerCallbacks() {
     HLX::EventSystem::getInstance().subscribe(SDL_EVENT_MOUSE_MOTION, this);
     mCallbackHandler.registerCallback(SDL_EVENT_MOUSE_MOTION,
                                       handleMouseMotion);
+};
 
-    HLX::EventSystem::getInstance().subscribe(SDL_EVENT_USER, this);
-    mCallbackHandler.registerCallback(SDL_EVENT_USER, handleBrushEvent);
+void PixelGrid::registerToolCallbacks() {
+    auto handleBrushEraser = [this](SDL_Event *event) -> void {
+        SDL_Log("HELIX_EVENT_TOOL CALLBACK INVOKED");
+
+        if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
+                          &mState->maximumPoint)) {
+            return; // Mouse Position is out of grid bounds
+        };
+
+        int pixelIndex = getPixelIndex();
+        const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
+        SDL_Log("Using tool on pixel #%d", pixelIndex);
+
+        if (event->user.code != HELIX_EVENT_ERASER) {
+            mPixels.at(pixelIndex)->handleMouseClick(mPaletteData->color);
+        } else {
+            mPixels.at(pixelIndex)
+                ->handleMouseClick(SDL_FColor{1.0f, 1.0f, 1.0f, 0.0f});
+            mPixels.at(pixelIndex)->setState(PixelState::EMPTY);
+        };
+    };
+
+    // BUG: HELIX_EVENT ID is +1 from what is created from SDL_RegisterEvents();
+    // How tf is it +1...?
+
+    // SDL_Log("SUBSCRIBING TO EVENT ID: %d", HELIX_EVENT - 1);
+    HLX::EventSystem::getInstance().subscribe(HELIX_EVENT - 1, this);
+    mCallbackHandler.registerCallback(HELIX_EVENT - 1, handleBrushEraser);
 };
 
 int PixelGrid::getPixelIndex() {

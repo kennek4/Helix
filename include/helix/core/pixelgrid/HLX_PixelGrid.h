@@ -1,16 +1,13 @@
 #pragma once
 
 #include "HLX_EventCallbackHandler.h"
+#include "HLX_Palette.h"
 #include "HLX_Pixel.h"
 #include "HLX_Subscriber.h"
 #include "HLX_Window.h"
 #include <vector>
 
 namespace HLX {
-
-// Custom user SDL_Event numbers
-const static Uint32 EVENT_BRUSH_DOWN = SDL_RegisterEvents(1);
-const static Uint32 EVENT_BRUSH_UP = SDL_RegisterEvents(1);
 
 typedef float ZoomLevel;
 
@@ -45,7 +42,7 @@ typedef struct PixelGridState {
 class PixelGrid : public Subscriber {
   public:
     PixelGrid(PixelGridState *state, SDLProps &sdlProps, int &windowWidth,
-              int &windowHeight);
+              int &windowHeight, PaletteData *paletteData);
     ~PixelGrid();
 
     bool onNotify(SDL_Event *event) override;
@@ -60,11 +57,13 @@ class PixelGrid : public Subscriber {
     SDLProps *mSDLProps{nullptr};
     PixelGridState *mState{nullptr};
 
+    PaletteData *mPaletteData{nullptr};
     EventCallbackHandler mCallbackHandler{this};
     std::vector<HLX::Pixel *> mPixels{};
 
     void calculateBounds(int &newWidth, int &newHeight);
-    void registerCallbacks();
+    void registerWindowCallbacks();
+    void registerToolCallbacks();
 
     int getPixelIndex();
 };

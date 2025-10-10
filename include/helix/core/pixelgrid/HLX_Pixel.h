@@ -48,7 +48,7 @@ class Pixel {
     void setFillColor(const SDL_FColor &newColor);
 
     void handleMouseHover(SDL_Event *event);
-    void handleMouseClick(SDL_Event *event, SDL_FColor *fillColor);
+    void handleMouseClick(const SDL_FColor &color);
 
   private:
     PixelState mPixelState = PixelState::EMPTY;

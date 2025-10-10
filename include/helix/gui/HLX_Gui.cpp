@@ -1,4 +1,5 @@
 #include "HLX_Gui.h"
+#include "imgui.h"
 
 namespace HLX {
 namespace GUI {
@@ -59,7 +60,9 @@ void shutdown() {
 // OR give a pointer/ref to the brush color? mabybe potentially even just give
 // renderPalette a reference to a Brush struct?
 
-void renderPalette(ImVec4 &rawColor, SDL_FColor &color) {
+void renderPalette(SDL_FColor &color) {
+    static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
+
     ImGui::Begin("ColorPicker");
     ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor);
 
