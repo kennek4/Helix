@@ -42,6 +42,7 @@ target_include_directories(
   HELIX_LIB
   PUBLIC ${HELIX_ROOT}/include/helix/core
   PUBLIC ${HELIX_ROOT}/include/helix/core/pixelgrid
+  PUBLIC ${HELIX_ROOT}/include/helix/core/tools
   PUBLIC ${HELIX_ROOT}/include/helix/core/window
   PUBLIC ${HELIX_ROOT}/include/helix/events
   PUBLIC ${HELIX_ROOT}/include/helix/gui)
