@@ -7,7 +7,7 @@
 #include <HLX_Pixel.h>
 #include <HLX_PixelGrid.h>
 #include <HLX_Subscriber.h>
-#include <HLX_Toolbar.h>
+#include <HLX_Toolbox.h>
 #include <HLX_Window.h>
 
 namespace HLX {
@@ -30,7 +30,7 @@ typedef struct HelixState {
 
     // Tools
     Palette palette{};
-    Toolbar toolbar{};
+    Toolbox toolbox{};
 
 } HelixState;
 

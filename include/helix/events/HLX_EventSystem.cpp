@@ -1,6 +1,5 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Subscriber.h"
-#include "HLX_Toolbar.h"
 #include <SDL3/SDL_log.h>
 
 inline bool isSubscriberInTopic(Uint32 *type, HLX::Subscriber *subscriber,

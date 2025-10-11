@@ -1,5 +1,9 @@
 #include "HLX_Gui.h"
+#include "HLX_Toolbox.h"
 #include "imgui.h"
+#include <SDL3/SDL_log.h>
+#include <array>
+#include <utility>
 
 namespace HLX {
 namespace GUI {
@@ -60,17 +64,47 @@ void shutdown() {
 // OR give a pointer/ref to the brush color? mabybe potentially even just give
 // renderPalette a reference to a Brush struct?
 
-void renderPalette(SDL_FColor &color) {
+void renderPalette(Palette &palette) {
     static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
 
-    ImGui::Begin("ColorPicker");
-    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor);
+    ImGui::Begin("Palette");
+    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor,
+                        ImGuiColorEditFlags_DisplayHex |
+                            ImGuiColorEditFlags_DisplayRGB);
 
     if (ImGui::IsItemEdited()) {
-        color = {rawColor.x, rawColor.y, rawColor.z, rawColor.w};
+        palette.setColor({rawColor.x, rawColor.y, rawColor.z, rawColor.w});
     };
 
     ImGui::End();
+};
+
+void renderToolbox(Toolbox &toolbox) {
+    static int selectedTool = 0;
+    static bool needsUpdate = false;
+
+    static const std::array<const char *, 2> TOOL_NAMES = {"Brush", "Eraser"};
+    static const std::array<Sint32, 2> TOOL_TYPES = {HELIX_EVENT_BRUSH,
+                                                     HELIX_EVENT_ERASER};
+
+    ImGui::Begin("Toolbox");
+
+    for (int i = 0; i < TOOL_NAMES.size(); i++) {
+        ImGui::PushID(i);
+        if (ImGui::RadioButton(TOOL_NAMES.at(i), &selectedTool, i)) {
+            needsUpdate = true;
+        };
+        ImGui::PopID();
+    };
+
+    ImGui::End();
+
+    if (needsUpdate) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Selected Tool: %d",
+                    selectedTool);
+        toolbox.setTool(TOOL_TYPES.at(selectedTool));
+        needsUpdate = false;
+    }
 };
 
 void renderToolbar() {

@@ -10,15 +10,15 @@ const Sint32 HELIX_EVENT_PENCIL = 2;
 const Sint32 HELIX_EVENT_ERASER = 3;
 const Sint32 HELIX_EVENT_BUCKET = 4;
 
-class Toolbar {
+class Toolbox {
   public:
-    Toolbar() {
+    Toolbox() {
         SDL_Log("HELIX_EVENT ID: %ud", HELIX_EVENT);
         SDL_zero(mEvent);
 
         mEvent.type = HELIX_EVENT;
     };
-    ~Toolbar() {};
+    ~Toolbox() {};
 
     void setTool(Sint32 toolCode) { mEvent.user.code = toolCode; };
     void useTool() { SDL_PushEvent(&mEvent); };

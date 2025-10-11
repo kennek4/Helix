@@ -53,6 +53,8 @@ class PixelGrid : public Subscriber {
 
     void saveImage();
 
+    PixelGridState &getState() const { return *mState; };
+
   private:
     SDLProps *mSDLProps{nullptr};
     PixelGridState *mState{nullptr};

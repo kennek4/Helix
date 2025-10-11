@@ -2,9 +2,8 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Palette.h"
 #include "HLX_Pixel.h"
-#include "HLX_Toolbar.h"
+#include "HLX_Toolbox.h"
 #include "HLX_Window.h"
-#include <SDL3/SDL_log.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -94,7 +93,7 @@ bool PixelGrid::init() {
     mState->background =
         SDL_CreateTextureFromSurface(mSDLProps->renderer, bgSurface);
     SDL_SetTextureBlendMode(mState->background, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureAlphaModFloat(mState->background, 0.1f);
+    SDL_SetTextureAlphaModFloat(mState->background, 0.05f);
     SDL_DestroySurface(bgSurface); // Don't need surface anymore
 
     SDL_Log("Calculating backgroundTilingScale...");
@@ -144,7 +143,7 @@ void PixelGrid::render() {
         } else {
             pixelColor = pixel->getOutlineColor();
             SDL_SetRenderDrawColorFloat(mSDLProps->renderer, pixelColor.r,
-                                        pixelColor.g, pixelColor.b, 0.5f);
+                                        pixelColor.g, pixelColor.b, 0.2f);
             SDL_RenderRect(mSDLProps->renderer, &pixel->getData());
         };
     };
@@ -224,10 +223,10 @@ void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
 
 void PixelGrid::registerWindowCallbacks() {
     auto handleWindowResize = [this](SDL_Event *event) -> void {
-        mState->mouseScaleX =
-            ((float)event->window.data1 / (float)mState->windowWidth);
-        mState->mouseScaleY =
-            ((float)event->window.data2 / (float)mState->windowHeight);
+        // mState->mouseScaleX =
+        //     ((float)event->window.data1 / (float)mState->windowWidth);
+        // mState->mouseScaleY =
+        //     ((float)event->window.data2 / (float)mState->windowHeight);
 
         calculateBounds(event->window.data1, event->window.data2);
 
@@ -273,7 +272,7 @@ void PixelGrid::registerWindowCallbacks() {
 
 void PixelGrid::registerToolCallbacks() {
     auto handleBrushEraser = [this](SDL_Event *event) -> void {
-        SDL_Log("HELIX_EVENT_TOOL CALLBACK INVOKED");
+        // SDL_Log("HELIX_EVENT_TOOL CALLBACK INVOKED");
 
         if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
                           &mState->maximumPoint)) {
@@ -282,7 +281,7 @@ void PixelGrid::registerToolCallbacks() {
 
         int pixelIndex = getPixelIndex();
         const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        SDL_Log("Using tool on pixel #%d", pixelIndex);
+        // SDL_Log("Using tool on pixel #%d", pixelIndex);
 
         if (event->user.code != HELIX_EVENT_ERASER) {
             mPixels.at(pixelIndex)->handleMouseClick(mPaletteData->color);
