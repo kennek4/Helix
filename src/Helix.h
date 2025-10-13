@@ -3,7 +3,6 @@
 #include <HLX_EventCallbackHandler.h>
 #include <HLX_EventSystem.h>
 #include <HLX_Gui.h>
-#include <HLX_Palette.h>
 #include <HLX_PixelGrid.h>
 #include <HLX_Subscriber.h>
 #include <HLX_Toolbox.h>
@@ -28,7 +27,6 @@ typedef struct HelixState {
     PixelGridState pixelGridState{};
 
     // Tools
-    Palette palette{};
     Toolbox toolbox{};
 
 } HelixState;

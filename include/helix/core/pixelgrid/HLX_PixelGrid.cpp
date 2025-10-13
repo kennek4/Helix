@@ -1,4 +1,5 @@
 #include "HLX_PixelGrid.h"
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -22,9 +23,8 @@ inline bool isPixelEmpty(const std::vector<char> &PIXEL_STATES,
 };
 
 namespace HLX {
-PixelGrid::PixelGrid(PixelGridState *state, SDLProps &sdlProps,
-                     PaletteData *paletteData)
-    : mState(state), mSDLProps(&sdlProps), mPaletteData(paletteData) {
+PixelGrid::PixelGrid(PixelGridState *state, SDLProps &sdlProps)
+    : mState(state), mSDLProps(&sdlProps) {
     SDL_Log("Reserving pixel amounts...");
     const int TOTAL_PIXEL_COUNT = mState->gridWidth * mState->gridHeight;
 
@@ -261,26 +261,46 @@ void PixelGrid::registerWindowCallbacks() {
 };
 
 void PixelGrid::registerToolCallbacks() {
-    const auto handleToolEvent = [this](SDL_Event *event) -> void {
-        if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
-                          &mState->maximumPoint)) {
-            return; // Mouse Position is out of grid bounds
-        };
+    static std::vector<int> brushIndicies;
+    brushIndicies.reserve(16);
 
+    const auto handleToolEvent = [this](SDL_Event *event) -> void {
         static bool isActive;
         static SDL_FColor color;
+        static SDL_Point startPoint;
+
+        brushIndicies.clear();
+
+        ToolProps *toolProps = static_cast<ToolProps *>(event->user.data1);
+        startPoint = {mState->mousePos.x, mState->mousePos.y};
+
+        SDL_Point currentPoint;
+
+        for (int i = 0; i < (toolProps->size * toolProps->size); i++) {
+            const SDL_Point &offsets = SIZE_OFFSETS.at(i);
+            currentPoint = {startPoint.x - offsets.x, startPoint.y - offsets.y};
+
+            if (!isWithinGrid(&currentPoint, &mState->minimumPoint,
+                              &mState->maximumPoint)) {
+                continue;
+            };
+
+            brushIndicies.emplace_back(
+                getPixelIndex(currentPoint.x, currentPoint.y));
+        };
 
         if (event->user.code == HELIX_EVENT_BRUSH) {
-            const SDL_FColor &palette = mPaletteData->color;
-            color = mPaletteData->color;
+            color = toolProps->color;
             isActive = true;
         } else if (event->user.code == HELIX_EVENT_ERASER) {
             color = {1.0f, 1.0f, 1.0f, SDL_ALPHA_TRANSPARENT_FLOAT};
             isActive = false;
         };
 
-        mPixels.state.at(getPixelIndex()) = isActive;
-        mPixels.color.at(getPixelIndex()) = color;
+        for (int &pointIndex : brushIndicies) {
+            mPixels.state.at(pointIndex) = isActive;
+            mPixels.color.at(pointIndex) = color;
+        };
     };
 
     // BUG: HELIX_EVENT ID is +1 from what is created from SDL_RegisterEvents();
@@ -291,14 +311,14 @@ void PixelGrid::registerToolCallbacks() {
     mCallbackHandler.registerCallback(HELIX_EVENT - 1, handleToolEvent);
 };
 
-inline int PixelGrid::getPixelIndex() {
+inline int PixelGrid::getPixelIndex(int &xPos, int &yPos) {
     static int gridX{0};
     static int gridY{0};
 
-    gridX = mState->mousePos.x - mState->minimumPoint.x;
+    gridX = xPos - mState->minimumPoint.x;
     gridX = std::floor(gridX / 25);
 
-    gridY = mState->mousePos.y - mState->minimumPoint.y;
+    gridY = yPos - mState->minimumPoint.y;
     gridY = std::floor(gridY / 25);
 
     return gridX + (mState->gridWidth * gridY);

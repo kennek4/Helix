@@ -2,6 +2,7 @@
 #include "HLX_Toolbox.h"
 #include "imgui.h"
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_pixels.h>
 #include <array>
 #include <utility>
 
@@ -64,25 +65,26 @@ void shutdown() {
 // OR give a pointer/ref to the brush color? mabybe potentially even just give
 // renderPalette a reference to a Brush struct?
 
-void renderPalette(Palette &palette) {
+void renderPalette(SDL_FColor *toolColor) {
+    constexpr ImGuiColorEditFlags flags = ImGuiColorEditFlags_InputRGB;
     static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
 
     ImGui::Begin("Palette");
-    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor);
+    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor, flags);
 
     if (ImGui::IsItemEdited()) {
-        palette.setColor({rawColor.x, rawColor.y, rawColor.z, rawColor.w});
+        *toolColor = {rawColor.x, rawColor.y, rawColor.z, rawColor.w};
     };
 
     ImGui::End();
 };
 
 void renderToolbox(Toolbox &toolbox) {
+    constexpr std::array<const char *, 2> TOOL_NAMES = {"Brush", "Eraser"};
+    constexpr std::array<Sint32, 2> TOOL_TYPES = {HELIX_EVENT_BRUSH,
+                                                  HELIX_EVENT_ERASER};
     static int selectedTool = 0;
     static bool needsUpdate = true;
-    static const std::array<const char *, 2> TOOL_NAMES = {"Brush", "Eraser"};
-    static const std::array<Sint32, 2> TOOL_TYPES = {HELIX_EVENT_BRUSH,
-                                                     HELIX_EVENT_ERASER};
 
     ImGui::Begin("Toolbox");
     for (int i = 0; i < TOOL_NAMES.size(); i++) {
@@ -93,6 +95,8 @@ void renderToolbox(Toolbox &toolbox) {
         ImGui::PopID();
     };
 
+    ImGui::SliderInt("Brush Size", toolbox.getToolSize(), 1, 4);
+
     ImGui::End();
 
     if (needsUpdate) {
@@ -102,18 +106,19 @@ void renderToolbox(Toolbox &toolbox) {
 };
 
 void renderToolbar() {
-    ImGuiWindowFlags winFlags =
-        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    constexpr ImGuiWindowFlags winFlags =
+        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+        ImGuiWindowFlags_NoBackground;
+    ;
+    ;
 
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
-    winFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    winFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus |
-                ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
-
     ImGui::Begin("Toolbar", NULL, winFlags);
 
     ImGuiIO &io = ImGui::GetIO();

@@ -2,7 +2,6 @@
 
 #include "HLX_EventCallbackHandler.h"
 #include "HLX_EventSystem.h"
-#include "HLX_Palette.h"
 #include "HLX_Subscriber.h"
 #include "HLX_Toolbox.h" // TODO: Change this import to Helix Custom events thing?
 #include "HLX_Window.h"
@@ -44,8 +43,7 @@ typedef struct PixelGridState {
 
 class PixelGrid : public Subscriber {
   public:
-    PixelGrid(PixelGridState *state, SDLProps &sdlProps,
-              PaletteData *paletteData);
+    PixelGrid(PixelGridState *state, SDLProps &sdlProps);
     ~PixelGrid();
 
     bool onNotify(SDL_Event *event) override;
@@ -60,17 +58,15 @@ class PixelGrid : public Subscriber {
 
   private:
     Pixels mPixels;
-
     SDLProps *mSDLProps{nullptr};
     PixelGridState *mState{nullptr};
 
-    PaletteData *mPaletteData{nullptr};
     EventCallbackHandler mCallbackHandler{this};
 
     void calculateBounds(int &newWidth, int &newHeight);
     void registerWindowCallbacks();
     void registerToolCallbacks();
 
-    int getPixelIndex();
+    int getPixelIndex(int &xPos, int &yPos);
 };
 }; // namespace HLX

@@ -22,15 +22,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::GUI");
     HLX::GUI::init(helix.sdlProps.renderer, helix.sdlProps.window);
 
-    // NOTE:
-    // TODO: Grid WxH should be determined later on by a modal,
-    // asking the dimensions of the sprite, file format(?), etc.
-
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::PixelGrid");
     helix.pixelGridState.gridWidth = 32;
     helix.pixelGridState.gridHeight = 32;
-    helix.pixelGrid = new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps,
-                                         helix.palette.getPaletteData());
+    helix.pixelGrid = new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps);
 
     if (!helix.pixelGrid->init()) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
@@ -57,7 +52,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     helix.window->clearScreen();
 
     HLX::GUI::newFrame();
-    HLX::GUI::renderPalette(helix.palette);
+    HLX::GUI::renderPalette(helix.toolbox.getToolColor());
     HLX::GUI::renderToolbox(helix.toolbox);
     HLX::GUI::renderToolbar();
 

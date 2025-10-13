@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include "HLX_Palette.h"
 #include "HLX_Toolbox.h"
 
 namespace HLX {
@@ -16,7 +15,7 @@ void shutdown();
 
 void handleEvent(SDL_Event *event);
 
-void renderPalette(Palette &palette);
+void renderPalette(SDL_FColor *toolColor);
 void renderToolbox(Toolbox &toolbox);
 void renderToolbar();
 
