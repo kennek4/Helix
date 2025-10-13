@@ -68,9 +68,7 @@ void renderPalette(Palette &palette) {
     static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
 
     ImGui::Begin("Palette");
-    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor,
-                        ImGuiColorEditFlags_DisplayHex |
-                            ImGuiColorEditFlags_DisplayRGB);
+    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor);
 
     if (ImGui::IsItemEdited()) {
         palette.setColor({rawColor.x, rawColor.y, rawColor.z, rawColor.w});
@@ -81,14 +79,12 @@ void renderPalette(Palette &palette) {
 
 void renderToolbox(Toolbox &toolbox) {
     static int selectedTool = 0;
-    static bool needsUpdate = false;
-
+    static bool needsUpdate = true;
     static const std::array<const char *, 2> TOOL_NAMES = {"Brush", "Eraser"};
     static const std::array<Sint32, 2> TOOL_TYPES = {HELIX_EVENT_BRUSH,
                                                      HELIX_EVENT_ERASER};
 
     ImGui::Begin("Toolbox");
-
     for (int i = 0; i < TOOL_NAMES.size(); i++) {
         ImGui::PushID(i);
         if (ImGui::RadioButton(TOOL_NAMES.at(i), &selectedTool, i)) {
@@ -100,8 +96,6 @@ void renderToolbox(Toolbox &toolbox) {
     ImGui::End();
 
     if (needsUpdate) {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Selected Tool: %d",
-                    selectedTool);
         toolbox.setTool(TOOL_TYPES.at(selectedTool));
         needsUpdate = false;
     }

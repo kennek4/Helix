@@ -4,7 +4,6 @@
 #include <HLX_EventSystem.h>
 #include <HLX_Gui.h>
 #include <HLX_Palette.h>
-#include <HLX_Pixel.h>
 #include <HLX_PixelGrid.h>
 #include <HLX_Subscriber.h>
 #include <HLX_Toolbox.h>

@@ -1,19 +1,22 @@
 #pragma once
 
 #include "HLX_EventCallbackHandler.h"
+#include "HLX_EventSystem.h"
 #include "HLX_Palette.h"
-#include "HLX_Pixel.h"
 #include "HLX_Subscriber.h"
+#include "HLX_Toolbox.h" // TODO: Change this import to Helix Custom events thing?
 #include "HLX_Window.h"
-#include <vector>
 
 namespace HLX {
 
-typedef float ZoomLevel;
+typedef struct Pixels {
+    std::vector<SDL_FRect> data;
+    std::vector<SDL_FColor> color;
+    std::vector<char> state;
+} Pixels;
 
+typedef float ZoomLevel;
 typedef struct PixelGridState {
-    int windowWidth = 0;
-    int windowHeight = 0;
     int gridWidth = 0;
     int gridHeight = 0;
 
@@ -41,27 +44,28 @@ typedef struct PixelGridState {
 
 class PixelGrid : public Subscriber {
   public:
-    PixelGrid(PixelGridState *state, SDLProps &sdlProps, int &windowWidth,
-              int &windowHeight, PaletteData *paletteData);
+    PixelGrid(PixelGridState *state, SDLProps &sdlProps,
+              PaletteData *paletteData);
     ~PixelGrid();
 
     bool onNotify(SDL_Event *event) override;
 
     bool init();
+
     void reset();
     void render();
-
     void saveImage();
 
     PixelGridState &getState() const { return *mState; };
 
   private:
+    Pixels mPixels;
+
     SDLProps *mSDLProps{nullptr};
     PixelGridState *mState{nullptr};
 
     PaletteData *mPaletteData{nullptr};
     EventCallbackHandler mCallbackHandler{this};
-    std::vector<HLX::Pixel *> mPixels{};
 
     void calculateBounds(int &newWidth, int &newHeight);
     void registerWindowCallbacks();

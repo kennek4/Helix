@@ -29,9 +29,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::PixelGrid");
     helix.pixelGridState.gridWidth = 32;
     helix.pixelGridState.gridHeight = 32;
-    helix.pixelGrid = new HLX::PixelGrid(
-        &helix.pixelGridState, helix.sdlProps, helix.windowProps.width,
-        helix.windowProps.height, helix.palette.getPaletteData());
+    helix.pixelGrid = new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps,
+                                         helix.palette.getPaletteData());
 
     if (!helix.pixelGrid->init()) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,

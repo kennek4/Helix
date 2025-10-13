@@ -1,9 +1,4 @@
 #include "HLX_PixelGrid.h"
-#include "HLX_EventSystem.h"
-#include "HLX_Palette.h"
-#include "HLX_Pixel.h"
-#include "HLX_Toolbox.h"
-#include "HLX_Window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -21,30 +16,43 @@ bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
     return inDomain && inRange;
 };
 
+inline bool isPixelEmpty(const std::vector<char> &PIXEL_STATES,
+                         const int &PIXEL_INDEX) {
+    return PIXEL_STATES.at(PIXEL_INDEX) != true;
+};
+
 namespace HLX {
 PixelGrid::PixelGrid(PixelGridState *state, SDLProps &sdlProps,
-                     int &windowWidth, int &windowHeight,
                      PaletteData *paletteData)
     : mState(state), mSDLProps(&sdlProps), mPaletteData(paletteData) {
-
     SDL_Log("Reserving pixel amounts...");
     const int TOTAL_PIXEL_COUNT = mState->gridWidth * mState->gridHeight;
-    mPixels.reserve(TOTAL_PIXEL_COUNT);
+
+    mPixels.data.reserve(TOTAL_PIXEL_COUNT);
+
+    mPixels.color.reserve(TOTAL_PIXEL_COUNT);
+    mPixels.color.assign(
+        mPixels.color.capacity(),
+        SDL_FColor{1.0f, 1.0f, 1.0f, SDL_ALPHA_TRANSPARENT_FLOAT});
+
+    mPixels.state.reserve(TOTAL_PIXEL_COUNT);
+    mPixels.state.assign(mPixels.state.capacity(), 0);
 
     SDL_Log("Setting Window WxH...");
-    mState->windowWidth = windowWidth;
-    mState->windowHeight = windowHeight;
 
-    calculateBounds(windowWidth, windowHeight);
+    int *winWidth = new int;
+    int *winHeight = new int;
+
+    SDL_GetWindowSize(mSDLProps->window, winWidth, winHeight);
+    calculateBounds(*winWidth, *winHeight);
+    delete winWidth;
+    delete winHeight;
+
     registerWindowCallbacks();
     registerToolCallbacks();
 };
 
-PixelGrid::~PixelGrid() {
-    for (Pixel *pixel : mPixels) {
-        delete pixel;
-    };
-};
+PixelGrid::~PixelGrid() {};
 
 bool PixelGrid::onNotify(SDL_Event *event) {
     mCallbackHandler.invokeCallback(event);
@@ -64,8 +72,9 @@ bool PixelGrid::init() {
     pixelData->y = mState->minimumPoint.y;
     pixelData->w = pixelData->h = 25;
 
-    mPixels.emplace_back(new Pixel(*pixelData));
-    for (int y = 1; y < mPixels.capacity(); y++) {
+    mPixels.data.emplace_back(*pixelData);
+
+    for (int y = 1; y < mPixels.data.capacity(); y++) {
         if (y % mState->gridHeight == 0) {
             pixelData->x = mState->minimumPoint.x;
             pixelData->y += sideLength;
@@ -73,7 +82,7 @@ bool PixelGrid::init() {
             pixelData->x += sideLength;
         }
 
-        mPixels.emplace_back(new Pixel(*pixelData));
+        mPixels.data.emplace_back(*pixelData);
     };
 
     delete pixelData;
@@ -98,7 +107,6 @@ bool PixelGrid::init() {
 
     SDL_Log("Calculating backgroundTilingScale...");
     mState->backgroundTilingScale = (float)25 / 256;
-    // (mState->background->w / (float)(mState->windowWidth)) / 4;
 
     SDL_Log("Setting backgroundRect...");
     mState->backgroundRect.x = (float)(mState->minimumPoint.x);
@@ -109,75 +117,66 @@ bool PixelGrid::init() {
 };
 
 void PixelGrid::reset() {
-    if (mPixels.size() == 0)
-        return;
-    for (Pixel *pixel : mPixels) {
-        pixel->setState(PixelState::EMPTY);
-        pixel->setFillColor(DEFAULT_COLORS.at(PixelColors::WHITE));
+    if (mPixels.data.size() != 0) {
+        for (int i = 0; i < (mState->gridWidth * mState->gridHeight); i++) {
+            mPixels.color.at(i) = {1.0f, 1.0f, 1.0f,
+                                   SDL_ALPHA_TRANSPARENT_FLOAT};
+        };
     };
 };
 
 void PixelGrid::render() {
     static SDL_FColor pixelColor{255, 255, 255, SDL_ALPHA_OPAQUE};
-    static PixelState pixelState{PixelState::EMPTY};
 
     SDL_RenderTextureTiled(mSDLProps->renderer, mState->background, NULL,
                            mState->backgroundTilingScale,
                            &mState->backgroundRect);
 
-    // HACK: This shit looks wack, def better ways
-    for (Pixel *pixel : mPixels) {
-        pixelState = pixel->getState();
-        if (pixelState == PixelState::FILLED) {
-            pixelColor = pixel->getFillColor();
+    for (int i = 0; i < (mState->gridWidth * mState->gridHeight); i++) {
+        pixelColor = mPixels.color.at(i);
+
+        if (!isPixelEmpty(mPixels.state, i)) {
             SDL_SetRenderDrawColorFloat(mSDLProps->renderer, pixelColor.r,
                                         pixelColor.g, pixelColor.b,
                                         pixelColor.a);
-            SDL_RenderFillRect(mSDLProps->renderer, &pixel->getData());
-        } else if (pixelState == PixelState::HOVER) {
-            pixelColor = DEFAULT_COLORS.at(PixelColors::GREY);
-            SDL_SetRenderDrawColorFloat(mSDLProps->renderer, pixelColor.r,
-                                        pixelColor.g, pixelColor.b,
-                                        pixelColor.a);
-            SDL_RenderFillRect(mSDLProps->renderer, &pixel->getData());
+            SDL_RenderFillRect(mSDLProps->renderer, &mPixels.data.at(i));
         } else {
-            pixelColor = pixel->getOutlineColor();
             SDL_SetRenderDrawColorFloat(mSDLProps->renderer, pixelColor.r,
                                         pixelColor.g, pixelColor.b, 0.2f);
-            SDL_RenderRect(mSDLProps->renderer, &pixel->getData());
+            SDL_RenderRect(mSDLProps->renderer, &mPixels.data.at(i));
         };
     };
 };
 
 void PixelGrid::saveImage() {
-    Uint8 *pixels = new Uint8[mPixels.size() * STBI_rgb_alpha]();
-
-    int r, g, b, a;
-
-    int index = 0;
-    for (int pos = 0; pos < mPixels.capacity(); pos++) {
-        const SDL_FColor fillColor = mPixels.at(pos)->getFillColor();
-        pixels[index++] = (int)(fillColor.r * 255.99f);
-        pixels[index++] = (int)(fillColor.g * 255.99f);
-        pixels[index++] = (int)(fillColor.b * 255.99f);
-        pixels[index++] = (int)(fillColor.a * 255.99f);
-    };
-
-    SDL_Log("Saving Image!");
-    std::string path = SDL_GetBasePath();
-    path += "SavedImage.png";
-
-    int success = stbi_write_png(path.c_str(), mState->gridWidth,
-                                 mState->gridWidth, STBI_rgb_alpha, pixels,
-                                 mState->gridWidth * STBI_rgb_alpha);
-
-    if (success == 0) {
-        SDL_Log("Saving image failed...");
-    } else {
-        SDL_Log("Saving image success!");
-    };
-
-    delete[] pixels;
+    // Uint8 *pixels = new Uint8[mPixels.size() * STBI_rgb_alpha]();
+    //
+    // int r, g, b, a;
+    //
+    // int index = 0;
+    // for (int pos = 0; pos < mPixels.capacity(); pos++) {
+    //     const SDL_FColor fillColor = mPixels.at(pos)->getFillColor();
+    //     pixels[index++] = (int)(fillColor.r * 255.99f);
+    //     pixels[index++] = (int)(fillColor.g * 255.99f);
+    //     pixels[index++] = (int)(fillColor.b * 255.99f);
+    //     pixels[index++] = (int)(fillColor.a * 255.99f);
+    // };
+    //
+    // SDL_Log("Saving Image!");
+    // std::string path = SDL_GetBasePath();
+    // path += "SavedImage.png";
+    //
+    // int success = stbi_write_png(path.c_str(), mState->gridWidth,
+    //                              mState->gridWidth, STBI_rgb_alpha, pixels,
+    //                              mState->gridWidth * STBI_rgb_alpha);
+    //
+    // if (success == 0) {
+    //     SDL_Log("Saving image failed...");
+    // } else {
+    //     SDL_Log("Saving image success!");
+    // };
+    //
+    // delete[] pixels;
 };
 
 void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
@@ -198,22 +197,18 @@ void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
     // this means that SDL_Rects are off by +25 on the X and Y axises
     mState->minimumPoint.x =
         mState->middlePoint.x - ((mState->gridWidth / 2) * 25);
-    // mState->minimumPoint.x = std::clamp(mState->minimumPoint.x, 0, *maxX);
 
     mState->minimumPoint.y =
         mState->middlePoint.y - ((mState->gridHeight / 2) * 25);
-    // mState->minimumPoint.y = std::clamp(mState->minimumPoint.y, 0, *maxY);
 
     SDL_Log("Min Point: %d, %d", mState->minimumPoint.x,
             mState->minimumPoint.y);
 
     mState->maximumPoint.x =
         mState->middlePoint.x + ((mState->gridWidth / 2) * 25);
-    // mState->maximumPoint.x = std::clamp(mState->maximumPoint.x, 0, *maxY);
 
     mState->maximumPoint.y =
         mState->middlePoint.y + ((mState->gridHeight / 2) * 25);
-    // mState->maximumPoint.y = std::clamp(mState->maximumPoint.y, 0, *maxY);
     SDL_Log("Max Point: %d, %d", mState->maximumPoint.x,
             mState->maximumPoint.y);
 
@@ -223,11 +218,6 @@ void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
 
 void PixelGrid::registerWindowCallbacks() {
     auto handleWindowResize = [this](SDL_Event *event) -> void {
-        // mState->mouseScaleX =
-        //     ((float)event->window.data1 / (float)mState->windowWidth);
-        // mState->mouseScaleY =
-        //     ((float)event->window.data2 / (float)mState->windowHeight);
-
         calculateBounds(event->window.data1, event->window.data2);
 
         const float sideLength = 25 * mState->currentZoom;
@@ -236,16 +226,16 @@ void PixelGrid::registerWindowCallbacks() {
         newPixelData->y = mState->minimumPoint.y;
         newPixelData->w = newPixelData->h = sideLength;
 
-        mPixels.at(0)->setData(*newPixelData);
-        for (int y = 1; y < mPixels.capacity(); y++) {
-            if (y % mState->gridHeight == 0) {
+        mPixels.data.at(0) = *newPixelData;
+        for (int i = 1; i < mPixels.data.size(); i++) {
+            if (i % mState->gridHeight == 0) {
                 newPixelData->x = mState->minimumPoint.x;
                 newPixelData->y += sideLength;
             } else {
                 newPixelData->x += sideLength;
             }
 
-            mPixels.at(y)->setData(*newPixelData);
+            mPixels.data.at(i) = *newPixelData;
         };
 
         mState->backgroundRect.x = (float)(mState->minimumPoint.x);
@@ -271,25 +261,26 @@ void PixelGrid::registerWindowCallbacks() {
 };
 
 void PixelGrid::registerToolCallbacks() {
-    auto handleBrushEraser = [this](SDL_Event *event) -> void {
-        // SDL_Log("HELIX_EVENT_TOOL CALLBACK INVOKED");
-
+    const auto handleToolEvent = [this](SDL_Event *event) -> void {
         if (!isWithinGrid(&mState->mousePos, &mState->minimumPoint,
                           &mState->maximumPoint)) {
             return; // Mouse Position is out of grid bounds
         };
 
-        int pixelIndex = getPixelIndex();
-        const SDL_FRect &pix = mPixels.at(pixelIndex)->getData();
-        // SDL_Log("Using tool on pixel #%d", pixelIndex);
+        static bool isActive;
+        static SDL_FColor color;
 
-        if (event->user.code != HELIX_EVENT_ERASER) {
-            mPixels.at(pixelIndex)->handleMouseClick(mPaletteData->color);
-        } else {
-            mPixels.at(pixelIndex)
-                ->handleMouseClick(SDL_FColor{1.0f, 1.0f, 1.0f, 0.0f});
-            mPixels.at(pixelIndex)->setState(PixelState::EMPTY);
+        if (event->user.code == HELIX_EVENT_BRUSH) {
+            const SDL_FColor &palette = mPaletteData->color;
+            color = mPaletteData->color;
+            isActive = true;
+        } else if (event->user.code == HELIX_EVENT_ERASER) {
+            color = {1.0f, 1.0f, 1.0f, SDL_ALPHA_TRANSPARENT_FLOAT};
+            isActive = false;
         };
+
+        mPixels.state.at(getPixelIndex()) = isActive;
+        mPixels.color.at(getPixelIndex()) = color;
     };
 
     // BUG: HELIX_EVENT ID is +1 from what is created from SDL_RegisterEvents();
@@ -297,10 +288,10 @@ void PixelGrid::registerToolCallbacks() {
 
     // SDL_Log("SUBSCRIBING TO EVENT ID: %d", HELIX_EVENT - 1);
     HLX::EventSystem::getInstance().subscribe(HELIX_EVENT - 1, this);
-    mCallbackHandler.registerCallback(HELIX_EVENT - 1, handleBrushEraser);
+    mCallbackHandler.registerCallback(HELIX_EVENT - 1, handleToolEvent);
 };
 
-int PixelGrid::getPixelIndex() {
+inline int PixelGrid::getPixelIndex() {
     static int gridX{0};
     static int gridY{0};
 
