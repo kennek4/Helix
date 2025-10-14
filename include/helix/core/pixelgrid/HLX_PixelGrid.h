@@ -63,10 +63,13 @@ class PixelGrid : public Subscriber {
 
     EventCallbackHandler mCallbackHandler{this};
 
+    void floodFill(Pixels &pixels, const SDL_Point &startPoint,
+                   const SDL_FColor &newColor);
+
     void calculateBounds(int &newWidth, int &newHeight);
     void registerWindowCallbacks();
     void registerToolCallbacks();
 
-    int getPixelIndex(int &xPos, int &yPos);
+    int getPixelIndex(const int &xPos, const int &yPos);
 };
 }; // namespace HLX

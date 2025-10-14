@@ -4,6 +4,7 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
 #include <array>
+#include <functional>
 #include <utility>
 
 namespace HLX {
@@ -61,10 +62,6 @@ void shutdown() {
     ImGui::DestroyContext();
 };
 
-// TODO: renderPalette should have a either a callback function as an argument
-// OR give a pointer/ref to the brush color? mabybe potentially even just give
-// renderPalette a reference to a Brush struct?
-
 void renderPalette(SDL_FColor *toolColor) {
     constexpr ImGuiColorEditFlags flags = ImGuiColorEditFlags_InputRGB;
     static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
@@ -80,9 +77,11 @@ void renderPalette(SDL_FColor *toolColor) {
 };
 
 void renderToolbox(Toolbox &toolbox) {
-    constexpr std::array<const char *, 2> TOOL_NAMES = {"Brush", "Eraser"};
-    constexpr std::array<Sint32, 2> TOOL_TYPES = {HELIX_EVENT_BRUSH,
-                                                  HELIX_EVENT_ERASER};
+    constexpr std::array<const char *, 3> TOOL_NAMES = {"Brush", "Eraser",
+                                                        "Bucket"};
+    constexpr std::array<Sint32, 3> TOOL_TYPES = {
+        HELIX_EVENT_BRUSH, HELIX_EVENT_ERASER, HELIX_EVENT_BUCKET};
+
     static int selectedTool = 0;
     static bool needsUpdate = true;
 
@@ -105,7 +104,7 @@ void renderToolbox(Toolbox &toolbox) {
     }
 };
 
-void renderToolbar() {
+void renderToolbar(PixelGrid &pixelGrid) {
     constexpr ImGuiWindowFlags winFlags =
         ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
@@ -139,7 +138,9 @@ void renderToolbar() {
         ImGui::Separator();
 
         if (ImGui::BeginMenu("File")) {
-
+            if (ImGui::MenuItem("Save Image")) {
+                std::mem_fn (&HLX::PixelGrid::saveImage)(pixelGrid);
+            };
             ImGui::EndMenu();
         }
 

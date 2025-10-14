@@ -1,4 +1,8 @@
 #include "HLX_PixelGrid.h"
+#include "HLX_Toolbox.h"
+#include <SDL3/SDL_pixels.h>
+#include <array>
+#include <queue>
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -7,12 +11,13 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
+bool isWithinGrid(const SDL_Point &point, const SDL_Point &minPoint,
+                  const SDL_Point &maxPoint) {
     static bool inDomain{false};
     static bool inRange{false};
 
-    inDomain = (point->x >= minPoint->x) && (point->x < maxPoint->x);
-    inRange = (point->y >= minPoint->y) && (point->y < maxPoint->y);
+    inDomain = (point.x >= minPoint.x) && (point.x < maxPoint.x);
+    inRange = (point.y >= minPoint.y) && (point.y < maxPoint.y);
 
     return inDomain && inRange;
 };
@@ -20,6 +25,12 @@ bool isWithinGrid(SDL_Point *point, SDL_Point *minPoint, SDL_Point *maxPoint) {
 inline bool isPixelEmpty(const std::vector<char> &PIXEL_STATES,
                          const int &PIXEL_INDEX) {
     return PIXEL_STATES.at(PIXEL_INDEX) != true;
+};
+
+inline bool isRGBAColorEqual(const SDL_FColor &COLOR_A,
+                             const SDL_FColor &COLOR_B) {
+    return ((COLOR_A.r == COLOR_B.r) && (COLOR_A.g == COLOR_B.g) &&
+            (COLOR_A.b == COLOR_B.b) && (COLOR_A.a == COLOR_B.a));
 };
 
 namespace HLX {
@@ -149,34 +160,37 @@ void PixelGrid::render() {
 };
 
 void PixelGrid::saveImage() {
-    // Uint8 *pixels = new Uint8[mPixels.size() * STBI_rgb_alpha]();
-    //
-    // int r, g, b, a;
-    //
-    // int index = 0;
-    // for (int pos = 0; pos < mPixels.capacity(); pos++) {
-    //     const SDL_FColor fillColor = mPixels.at(pos)->getFillColor();
-    //     pixels[index++] = (int)(fillColor.r * 255.99f);
-    //     pixels[index++] = (int)(fillColor.g * 255.99f);
-    //     pixels[index++] = (int)(fillColor.b * 255.99f);
-    //     pixels[index++] = (int)(fillColor.a * 255.99f);
-    // };
-    //
-    // SDL_Log("Saving Image!");
-    // std::string path = SDL_GetBasePath();
-    // path += "SavedImage.png";
-    //
-    // int success = stbi_write_png(path.c_str(), mState->gridWidth,
-    //                              mState->gridWidth, STBI_rgb_alpha, pixels,
-    //                              mState->gridWidth * STBI_rgb_alpha);
-    //
-    // if (success == 0) {
-    //     SDL_Log("Saving image failed...");
-    // } else {
-    //     SDL_Log("Saving image success!");
-    // };
-    //
-    // delete[] pixels;
+    Uint8 *pixels = new Uint8[mPixels.data.size() * STBI_rgb_alpha]();
+
+    int r, g, b, a;
+    int index = 0;
+    for (int pos = 0; pos < mPixels.data.size(); pos++) {
+        const SDL_FColor &fillColor = mPixels.color.at(pos);
+        pixels[index++] = (int)(fillColor.r * 255.99f);
+        pixels[index++] = (int)(fillColor.g * 255.99f);
+        pixels[index++] = (int)(fillColor.b * 255.99f);
+        pixels[index++] = (int)(fillColor.a * 255.99f);
+    };
+
+    SDL_Log("Saving Image!");
+    std::string path = SDL_GetBasePath();
+    path += "SavedImage.png";
+
+    int success = stbi_write_png(path.c_str(), mState->gridWidth,
+                                 mState->gridWidth, STBI_rgb_alpha, pixels,
+                                 mState->gridWidth * STBI_rgb_alpha);
+
+    // int success =
+    //     stbi_write_jpg(path.c_str(), mState->gridWidth, mState->gridHeight,
+    //                    STBI_rgb_alpha, pixels, 100);
+
+    if (success == 0) {
+        SDL_Log("Saving image failed...");
+    } else {
+        SDL_Log("Saving image success!");
+    };
+
+    delete[] pixels;
 };
 
 void PixelGrid::calculateBounds(int &newWidth, int &newHeight) {
@@ -269,9 +283,11 @@ void PixelGrid::registerToolCallbacks() {
         static SDL_FColor color;
         static SDL_Point startPoint;
 
+        isActive = false;
         brushIndicies.clear();
 
         ToolProps *toolProps = static_cast<ToolProps *>(event->user.data1);
+
         startPoint = {mState->mousePos.x, mState->mousePos.y};
 
         SDL_Point currentPoint;
@@ -280,8 +296,8 @@ void PixelGrid::registerToolCallbacks() {
             const SDL_Point &offsets = SIZE_OFFSETS.at(i);
             currentPoint = {startPoint.x - offsets.x, startPoint.y - offsets.y};
 
-            if (!isWithinGrid(&currentPoint, &mState->minimumPoint,
-                              &mState->maximumPoint)) {
+            if (!isWithinGrid(currentPoint, mState->minimumPoint,
+                              mState->maximumPoint)) {
                 continue;
             };
 
@@ -297,9 +313,13 @@ void PixelGrid::registerToolCallbacks() {
             isActive = false;
         };
 
-        for (int &pointIndex : brushIndicies) {
-            mPixels.state.at(pointIndex) = isActive;
-            mPixels.color.at(pointIndex) = color;
+        if (event->user.code != HELIX_EVENT_BUCKET) {
+            for (int &pointIndex : brushIndicies) {
+                mPixels.state.at(pointIndex) = isActive;
+                mPixels.color.at(pointIndex) = color;
+            };
+        } else if (event->user.code == HELIX_EVENT_BUCKET) {
+            floodFill(mPixels, startPoint, toolProps->color);
         };
     };
 
@@ -311,7 +331,52 @@ void PixelGrid::registerToolCallbacks() {
     mCallbackHandler.registerCallback(HELIX_EVENT - 1, handleToolEvent);
 };
 
-inline int PixelGrid::getPixelIndex(int &xPos, int &yPos) {
+void PixelGrid::floodFill(Pixels &pixels, const SDL_Point &startPoint,
+                          const SDL_FColor &newColor) {
+    if (!isWithinGrid(startPoint, mState->minimumPoint, mState->maximumPoint)) {
+        return;
+    };
+
+    int pixelIndex = getPixelIndex(startPoint.x, startPoint.y);
+    const SDL_FColor ORIGINAL_COLOR = mPixels.color.at(pixelIndex);
+
+    if (isRGBAColorEqual(ORIGINAL_COLOR, newColor)) {
+        return;
+    };
+
+    std::queue<SDL_Point> queue;
+    queue.emplace(startPoint);
+
+    SDL_Point currentPoint;
+    SDL_FColor currentColor;
+
+    while (!queue.empty()) {
+        currentPoint = queue.front();
+        queue.pop();
+
+        if (!isWithinGrid(currentPoint, mState->minimumPoint,
+                          mState->maximumPoint)) {
+            continue;
+        };
+
+        pixelIndex = getPixelIndex(currentPoint.x, currentPoint.y);
+        currentColor = mPixels.color.at(pixelIndex);
+
+        if (!isRGBAColorEqual(ORIGINAL_COLOR, currentColor)) {
+            continue;
+        };
+
+        mPixels.color.at(pixelIndex) = newColor;
+        mPixels.state.at(pixelIndex) = true;
+
+        queue.emplace(SDL_Point{currentPoint.x - 25, currentPoint.y});
+        queue.emplace(SDL_Point{currentPoint.x, currentPoint.y - 25});
+        queue.emplace(SDL_Point{currentPoint.x + 25, currentPoint.y});
+        queue.emplace(SDL_Point{currentPoint.x, currentPoint.y + 25});
+    };
+};
+
+inline int PixelGrid::getPixelIndex(const int &xPos, const int &yPos) {
     static int gridX{0};
     static int gridY{0};
 
