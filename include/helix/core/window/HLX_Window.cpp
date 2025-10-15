@@ -2,9 +2,9 @@
 #include <SDL3/SDL_render.h>
 
 namespace HLX {
-Window::Window(SDLProps &sdlData, WindowProps &windowProps) {
-    mSDLProps = &sdlData;
-    mWindowProps = &windowProps;
+Window::Window(SDLProps *sdlData, WindowProps *windowProps) {
+    mSDLProps = sdlData;
+    mWindowProps = windowProps;
 };
 
 Window::~Window() {
@@ -63,11 +63,5 @@ bool Window::init() {
 };
 
 bool Window::shutdown() { return true; };
-
-void Window::clearScreen() {
-    SDL_SetRenderDrawColorFloat(mSDLProps->renderer, 0.8f, 0.8f, 0.8f,
-                                SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(mSDLProps->renderer);
-};
 
 }; // namespace HLX

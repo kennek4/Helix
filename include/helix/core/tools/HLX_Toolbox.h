@@ -12,6 +12,7 @@ const Sint32 HELIX_EVENT_BRUSH = 1;
 const Sint32 HELIX_EVENT_PENCIL = 2;
 const Sint32 HELIX_EVENT_ERASER = 3;
 const Sint32 HELIX_EVENT_BUCKET = 4;
+const Sint32 HELIX_BACKGROUND_RESIZE = 5;
 
 // HACK: Should be doing this programmatically but hard coding for testing
 constexpr std::array<SDL_Point, 16> SIZE_OFFSETS = {

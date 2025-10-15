@@ -19,13 +19,11 @@ typedef struct WindowProps {
 
 class Window {
   public:
-    Window(SDLProps &sdlProps, WindowProps &windowProps);
+    Window(SDLProps *sdlProps, WindowProps *windowProps);
     ~Window();
 
     bool init();
     bool shutdown();
-
-    void clearScreen();
 
   private:
     SDLProps *mSDLProps{nullptr};

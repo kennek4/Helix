@@ -3,6 +3,7 @@
 #include "../HLX_pch.h"
 #include "HLX_PixelGrid.h"
 #include "HLX_Toolbox.h"
+#include "image/HLX_Image.h"
 
 namespace HLX {
 namespace GUI {
@@ -18,7 +19,7 @@ void handleEvent(SDL_Event *event);
 
 void renderPalette(SDL_FColor *toolColor);
 void renderToolbox(Toolbox &toolbox);
-void renderToolbar(PixelGrid &pixelGrid);
+void renderToolbar();
 
 }; // namespace GUI
 }; // namespace HLX

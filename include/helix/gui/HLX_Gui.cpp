@@ -1,5 +1,7 @@
 #include "HLX_Gui.h"
+#include "HLX_EventSystem.h"
 #include "HLX_Toolbox.h"
+#include "image/HLX_Image.h"
 #include "imgui.h"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
@@ -104,7 +106,7 @@ void renderToolbox(Toolbox &toolbox) {
     }
 };
 
-void renderToolbar(PixelGrid &pixelGrid) {
+void renderToolbar() {
     constexpr ImGuiWindowFlags winFlags =
         ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
@@ -139,7 +141,6 @@ void renderToolbar(PixelGrid &pixelGrid) {
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Image")) {
-                std::mem_fn (&HLX::PixelGrid::saveImage)(pixelGrid);
             };
             ImGui::EndMenu();
         }

@@ -4,9 +4,18 @@
 #include <HLX_EventSystem.h>
 #include <HLX_Gui.h>
 #include <HLX_PixelGrid.h>
+#include <HLX_Renderer.h>
 #include <HLX_Subscriber.h>
 #include <HLX_Toolbox.h>
 #include <HLX_Window.h>
+
+class HelixApp {
+  public:
+    HelixApp();
+    ~HelixApp();
+
+  private:
+};
 
 namespace HLX {
 typedef struct HelixState {
@@ -24,7 +33,7 @@ typedef struct HelixState {
     // HLX
     Window *window{nullptr};
     PixelGrid *pixelGrid{nullptr};
-    PixelGridState pixelGridState{};
+    Renderer *renderer{nullptr};
 
     // Tools
     Toolbox toolbox{};

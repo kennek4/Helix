@@ -14,7 +14,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     *appstate = new HLX::HelixState;
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(*appstate);
 
-    helix.window = new HLX::Window(helix.sdlProps, helix.windowProps);
+    helix.window = new HLX::Window(&helix.sdlProps, &helix.windowProps);
     if (!helix.window->init()) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
                         "Failed to initialize Helix, %s", SDL_GetError());
@@ -26,9 +26,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     HLX::GUI::init(helix.sdlProps.renderer, helix.sdlProps.window);
 
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::PixelGrid");
-    helix.pixelGridState.gridWidth = 32;
-    helix.pixelGridState.gridHeight = 32;
-    helix.pixelGrid = new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps);
+    helix.pixelGrid = new HLX::PixelGrid(&helix.sdlProps, 32, 32);
+    helix.pixelGrid->init();
+
+    helix.renderer = new HLX::Renderer(helix.sdlProps.renderer);
 
     if (!helix.pixelGrid->init()) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
@@ -52,17 +53,19 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     };
 
     // NOTE: Clear screen
-    helix.window->clearScreen();
+    helix.renderer->clearScreen();
+    helix.renderer->createBackground(helix.pixelGrid->getBackgroundFRect(),
+                                     25.0f / 256.0f);
+    helix.renderer->createGrid(helix.pixelGrid->getGridData());
 
     HLX::GUI::newFrame();
     HLX::GUI::renderPalette(helix.toolbox.getToolColor());
     HLX::GUI::renderToolbox(helix.toolbox);
-    HLX::GUI::renderToolbar(*helix.pixelGrid);
+    HLX::GUI::renderToolbar();
     HLX::GUI::renderFrame(helix.sdlProps.renderer);
 
-    helix.pixelGrid->render();
-    SDL_RenderPresent(helix.sdlProps.renderer); /* put it all on the screen! */
-    return SDL_APP_CONTINUE;                    /* carry on with the program! */
+    helix.renderer->render();
+    return SDL_APP_CONTINUE; /* carry on with the program! */
 };
 
 // Event Handling

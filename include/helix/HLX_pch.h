@@ -5,6 +5,7 @@
 #include <functional>
 #include <map>
 #include <print>
+#include <queue>
 #include <set>
 #include <string>
 #include <utility>
