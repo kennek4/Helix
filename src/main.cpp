@@ -1,9 +1,7 @@
-#include "HLX_Window.h"
+#include "HLX_Gui.h"
+#include "HLX_PixelGrid.h"
 #include "Helix.h"
-#include "imgui.h"
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_video.h>
+#include <functional>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
@@ -16,33 +14,31 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     *appstate = new HLX::HelixState;
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(*appstate);
 
-    helix.window = new HLX::Window(helix.sdlProps, helix.windowProps);
+    helix.window = new HLX::Window(&helix.sdlProps, &helix.windowProps);
     if (!helix.window->init()) {
-        SDL_Log("%s", SDL_GetError());
+        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
+                        "Failed to initialize Helix, %s", SDL_GetError());
         return SDL_APP_FAILURE;
     };
 
     // TODO: GUI error handling here
-    SDL_Log("Initializing GUI...");
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::GUI");
     HLX::GUI::init(helix.sdlProps.renderer, helix.sdlProps.window);
 
-    // NOTE:
-    // TODO: Grid WxH should be determined later on by a modal,
-    // asking the dimensions of the sprite, file format(?), etc.
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Initializing HLX::PixelGrid");
+    helix.pixelGrid = new HLX::PixelGrid(&helix.sdlProps, 32, 32);
+    helix.pixelGrid->init();
 
-    SDL_Log("Initializing PixelGrid...");
-    helix.pixelGridState.gridWidth = 32;
-    helix.pixelGridState.gridHeight = 32;
-    helix.pixelGrid =
-        new HLX::PixelGrid(&helix.pixelGridState, helix.sdlProps,
-                           helix.windowProps.width, helix.windowProps.height);
+    helix.renderer = new HLX::Renderer(helix.sdlProps.renderer);
 
     if (!helix.pixelGrid->init()) {
-        SDL_Log("%s", SDL_GetError());
+        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
+                        "Failed to initialize PixelGrid, %s", SDL_GetError());
         return SDL_APP_FAILURE;
     };
 
-    SDL_Log("Helix Initialized!");
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                "Successfully initialized Helix!");
     return SDL_APP_CONTINUE;
 };
 
@@ -53,68 +49,36 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // Process Input
     // NOTE: This allows mouse painting / dragging
     if (isMouseDown) {
-        SDL_Event hlxMouseUp;
-        float x, y;
-
-        SDL_zero(hlxMouseUp);
-        hlxMouseUp.type = SDL_EVENT_USER;
-        SDL_GetMouseState(&x, &y);
-
-        hlxMouseUp.motion.x = x;
-        hlxMouseUp.motion.y = y;
-        hlxMouseUp.user.data1 = &helix.brush.fillColor;
-
-        SDL_PushEvent(&hlxMouseUp);
+        helix.toolbox.useTool();
     };
-
-    // helixPixelGrid->handleMouseDrag(isMouseDown);
 
     // NOTE: Clear screen
-    SDL_SetRenderDrawColor(helix.sdlProps.renderer, 255, 255, 255,
-                           SDL_ALPHA_OPAQUE); /* black, full alpha */
-    SDL_RenderClear(helix.sdlProps.renderer); /* start with a blank canvas. */
+    helix.renderer->clearScreen();
+    helix.renderer->createBackground(helix.pixelGrid->getBackgroundFRect(),
+                                     25.0f / 256.0f);
+    helix.renderer->createGrid(helix.pixelGrid->getGridData());
 
     HLX::GUI::newFrame();
+    HLX::GUI::renderPalette(helix.toolbox.getToolColor());
+    HLX::GUI::renderToolbox(helix.toolbox);
     HLX::GUI::renderToolbar();
-    HLX::GUI::renderPalette(helix.brush.rawColor, helix.brush.fillColor);
-
-    ImGui::Begin("Save button");
-
-    if (ImGui::Button("Save")) {
-        SDL_Log("Saving img...");
-        helix.pixelGrid->saveImage();
-    };
-
-    if (ImGui::Button("Resize Screen")) {
-        SDL_Log("Force resizing screen");
-        SDL_SetWindowFullscreen(helix.sdlProps.window, false);
-        SDL_SetWindowSize(helix.sdlProps.window, 1280, 720);
-    }
-
-    if (ImGui::Button("Reset Canvas")) {
-        helix.pixelGrid->reset();
-    };
-
-    ImGui::End();
-
-    helix.pixelGrid->render();
     HLX::GUI::renderFrame(helix.sdlProps.renderer);
-    SDL_RenderPresent(helix.sdlProps.renderer); /* put it all on the screen! */
-    return SDL_APP_CONTINUE;                    /* carry on with the program! */
+
+    helix.renderer->render();
+    return SDL_APP_CONTINUE; /* carry on with the program! */
 };
 
 // Event Handling
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
+    if (event->type == SDL_EVENT_QUIT) {
+        return SDL_APP_FAILURE;
+    };
 
     if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         isMouseDown = true;
     } else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
         isMouseDown = false;
-    };
-
-    if (event->type == SDL_EVENT_QUIT) {
-        return SDL_APP_FAILURE;
     };
 
     HLX::EventSystem::getInstance().publishToTopic(event);
@@ -124,7 +88,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     HLX::HelixState &helix = *static_cast<HLX::HelixState *>(appstate);
-    SDL_DestroyTexture(helix.background);
+    // SDL_DestroyTexture(helix.pixelGrid.);
     SDL_DestroyRenderer(helix.sdlProps.renderer);
     SDL_DestroyWindow(helix.sdlProps.window);
     SDL_Quit();

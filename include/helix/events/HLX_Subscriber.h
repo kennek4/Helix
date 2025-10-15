@@ -5,7 +5,8 @@
 namespace HLX {
 class Subscriber {
   public:
-    virtual ~Subscriber() = default;
+    Subscriber() {};
+    ~Subscriber() {};
     virtual bool onNotify(SDL_Event *event) = 0;
 };
 }; // namespace HLX

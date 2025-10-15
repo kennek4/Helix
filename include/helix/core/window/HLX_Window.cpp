@@ -1,9 +1,10 @@
 #include "HLX_Window.h"
+#include <SDL3/SDL_render.h>
 
 namespace HLX {
-Window::Window(SDLProps &sdlData, WindowProps &windowProps) {
-    mSDLProps = &sdlData;
-    mWindowProps = &windowProps;
+Window::Window(SDLProps *sdlData, WindowProps *windowProps) {
+    mSDLProps = sdlData;
+    mWindowProps = windowProps;
 };
 
 Window::~Window() {
@@ -62,4 +63,5 @@ bool Window::init() {
 };
 
 bool Window::shutdown() { return true; };
+
 }; // namespace HLX

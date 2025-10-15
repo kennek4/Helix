@@ -1,71 +1,62 @@
 #pragma once
 
+#include "../HLX_pch.h"
 #include "HLX_EventCallbackHandler.h"
-#include "HLX_Pixel.h"
+#include "HLX_EventSystem.h"
 #include "HLX_Subscriber.h"
+#include "HLX_Toolbox.h" // TODO: Change this import to Helix Custom events thing?
 #include "HLX_Window.h"
-#include <vector>
+#include <SDL3/SDL_rect.h>
 
 namespace HLX {
 
-// Custom user SDL_Event numbers
-const static Uint32 EVENT_BRUSH_DOWN = SDL_RegisterEvents(1);
-const static Uint32 EVENT_BRUSH_UP = SDL_RegisterEvents(1);
-
-typedef float ZoomLevel;
-
-typedef struct PixelGridState {
-    int windowWidth = 0;
-    int windowHeight = 0;
-    int gridWidth = 0;
-    int gridHeight = 0;
-
-    SDL_Point minimumPoint{0, 0};
-    SDL_Point middlePoint{0, 0};
-    SDL_Point maximumPoint{0, 0};
-
-    const ZoomLevel maxZoom{2.0f};
-    const ZoomLevel minZoom{0.5f};
-    ZoomLevel currentZoom{1.0f};
-
-    SDL_Point mousePos{0, 0};
-    float mouseScaleX = 1.0f;
-    float mouseScaleY = 1.0f;
-
-    SDL_Texture *background{nullptr};
-    SDL_FRect backgroundRect = {0, 0, 0, 0};
-    float backgroundTilingScale{1.0f};
-
-    PixelGridState() {};
-    PixelGridState(const int gridWidth, const int gridHeight)
-        : gridWidth(gridWidth), gridHeight(gridHeight) {};
-
-} PixelGridState;
+typedef struct Grid {
+    std::vector<SDL_FRect> frects;
+    std::vector<SDL_FColor> colors;
+    std::vector<char> states;
+    int widthInPixels{32};
+    int heightInPixels{32};
+} Grid;
 
 class PixelGrid : public Subscriber {
+
   public:
-    PixelGrid(PixelGridState *state, SDLProps &sdlProps, int &windowWidth,
-              int &windowHeight);
+    PixelGrid(SDLProps *sdlProps, const int GRID_WIDTH, const int GRID_HEIGHT);
     ~PixelGrid();
 
     bool onNotify(SDL_Event *event) override;
 
     bool init();
     void reset();
-    void render();
 
-    void saveImage();
+    inline const SDL_FRect &getBackgroundFRect() { return mBackgroundFRect; };
+    inline const Grid &getGridData() { return mGrid; };
 
   private:
+    Grid mGrid;
     SDLProps *mSDLProps{nullptr};
-    PixelGridState *mState{nullptr};
-
     EventCallbackHandler mCallbackHandler{this};
-    std::vector<HLX::Pixel *> mPixels{};
 
-    void calculateBounds(int &newWidth, int &newHeight);
-    void registerCallbacks();
+    SDL_FPoint mMousePos;
 
-    int getPixelIndex();
+    SDL_Point mMinPoint;
+    SDL_Point mMidPoint;
+    SDL_Point mMaxPoint;
+
+    SDL_FRect mBackgroundFRect;
+
+    void handleBrushEvent(const SDL_Point &startPoint,
+                          const SDL_FColor &brushColor, const int &brushSize,
+                          const bool isPixelActive,
+                          std::vector<int> &brushIndicies);
+
+    void handleBucketEvent(const SDL_Point &startPoint,
+                           const SDL_FColor &bucketColor);
+
+    void handlePipetteEvent();
+
+    void setGridBounds(const int newWindowWidth, const int newWindowHeight);
+    void registerWindowCallbacks();
+    void registerToolCallbacks();
 };
 }; // namespace HLX

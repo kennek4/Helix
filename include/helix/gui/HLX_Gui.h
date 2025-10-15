@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../HLX_pch.h"
+#include "HLX_PixelGrid.h"
+#include "HLX_Toolbox.h"
+#include "image/HLX_Image.h"
 
 namespace HLX {
 namespace GUI {
@@ -14,7 +17,8 @@ void shutdown();
 
 void handleEvent(SDL_Event *event);
 
-void renderPalette(ImVec4 &rawColor, SDL_FColor &color);
+void renderPalette(SDL_FColor *toolColor);
+void renderToolbox(Toolbox &toolbox);
 void renderToolbar();
 
 }; // namespace GUI

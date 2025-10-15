@@ -24,6 +24,7 @@ EventSystem::~EventSystem() {
 void EventSystem::subscribe(Uint32 type, Subscriber *subscriber) {
     if (!mEventToTopic.contains(type)) {
         // Create the topic
+        SDL_Log("EVENT TYPE ID: %d REGISTERED", type);
         mEventToTopic.insert({type, new Topic(type)});
     } else if (isSubscriberInTopic(&type, subscriber, &mEventToTopic)) {
 
@@ -36,6 +37,7 @@ void EventSystem::subscribe(Uint32 type, Subscriber *subscriber) {
 void EventSystem::unsubscribe(Uint32 type, Subscriber *subscriber) {
     if (!mEventToTopic.contains(type))
         return; // No topic with the given event type
+    SDL_Log("EVENT TYPE ID: %d ", type);
     if (!isSubscriberInTopic(&type, subscriber, &mEventToTopic)) {
         return;
     };

@@ -9,6 +9,7 @@ static bool isHelixWindowInitialized = false;
 typedef struct SDLProps {
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Cursor *cursor;
 } SDLProps;
 
 typedef struct WindowProps {
@@ -18,7 +19,7 @@ typedef struct WindowProps {
 
 class Window {
   public:
-    Window(SDLProps &sdlProps, WindowProps &windowProps);
+    Window(SDLProps *sdlProps, WindowProps *windowProps);
     ~Window();
 
     bool init();
