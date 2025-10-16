@@ -148,17 +148,14 @@ void PixelGrid::registerToolCallbacks() {
 
         switch (event->user.code) {
         case Constants::HelixEventToolBrush:
-            SDL_Log("Brush Event!");
             handleBrushEvent(startPoint, toolProps->color, toolProps->size,
                              true, brushIndicies);
             break;
         case Constants::HelixEventToolEraser:
-            SDL_Log("Eraser Event!");
             handleBrushEvent(startPoint, HLX::Constants::EmptyPixelFColor,
                              toolProps->size, false, brushIndicies);
             break;
         case Constants::HelixEventToolBucket:
-            SDL_Log("Bucket Event!");
             handleBucketEvent(startPoint, toolProps->color);
             break;
         }
