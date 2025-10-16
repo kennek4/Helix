@@ -5,8 +5,6 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Subscriber.h"
 #include "HLX_Toolbox.h" // TODO: Change this import to Helix Custom events thing?
-#include "HLX_Window.h"
-#include <SDL3/SDL_rect.h>
 
 namespace HLX {
 
@@ -45,6 +43,9 @@ class PixelGrid : public Subscriber {
 
     SDL_FRect mBackgroundFRect;
 
+    void registerWindowCallbacks();
+    void registerToolCallbacks();
+
     void handleBrushEvent(const SDL_Point &startPoint,
                           const SDL_FColor &brushColor, const int &brushSize,
                           const bool isPixelActive,
@@ -56,7 +57,8 @@ class PixelGrid : public Subscriber {
     void handlePipetteEvent();
 
     void setGridBounds(const int newWindowWidth, const int newWindowHeight);
-    void registerWindowCallbacks();
-    void registerToolCallbacks();
+
+    bool isPointInGrid(const SDL_Point &point);
+    bool isPixelEmpty(const int &pixelIndex);
 };
 }; // namespace HLX

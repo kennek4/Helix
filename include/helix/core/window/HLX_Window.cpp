@@ -21,7 +21,6 @@ bool Window::init() {
         SDL_WINDOW_FULLSCREEN;
 
     if (!SDL_Init(INIT_FLAGS)) {
-        SDL_Log("%s", SDL_GetError());
         return false;
     };
 
@@ -54,7 +53,6 @@ bool Window::init() {
 
     // TODO: Control whether SDL is set to fullscreen by config variable
     SDL_SetWindowFullscreen(mSDLProps->window, true);
-
     SDL_GetWindowSize(mSDLProps->window, &mWindowProps->width,
                       &mWindowProps->height);
 

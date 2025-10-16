@@ -1,4 +1,5 @@
 #include "HLX_Gui.h"
+#include "HLX_Constants.h"
 #include "HLX_EventSystem.h"
 #include "HLX_Toolbox.h"
 #include "image/HLX_Image.h"
@@ -79,10 +80,11 @@ void renderPalette(SDL_FColor *toolColor) {
 };
 
 void renderToolbox(Toolbox &toolbox) {
-    constexpr std::array<const char *, 3> TOOL_NAMES = {"Brush", "Eraser",
+    constexpr std::array<const char *, 3> TOOL_NAMES = {"Eraser", "Brush",
                                                         "Bucket"};
     constexpr std::array<Sint32, 3> TOOL_TYPES = {
-        HELIX_EVENT_BRUSH, HELIX_EVENT_ERASER, HELIX_EVENT_BUCKET};
+        Constants::HelixEventToolEraser, Constants::HelixEventToolBrush,
+        Constants::HelixEventToolBucket};
 
     static int selectedTool = 0;
     static bool needsUpdate = true;
@@ -95,12 +97,11 @@ void renderToolbox(Toolbox &toolbox) {
         };
         ImGui::PopID();
     };
-
     ImGui::SliderInt("Brush Size", toolbox.getToolSize(), 1, 4);
-
     ImGui::End();
 
     if (needsUpdate) {
+        SDL_Log("Tool Type: %d", selectedTool);
         toolbox.setTool(TOOL_TYPES.at(selectedTool));
         needsUpdate = false;
     }

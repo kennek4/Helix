@@ -1,18 +1,10 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include <array>
-#include <map>
-#include <vector>
+#include <HLX_Constants.h>
+#include <HLX_Types.h>
 
 namespace HLX {
-
-const Uint32 HELIX_EVENT = SDL_RegisterEvents(1);
-const Sint32 HELIX_EVENT_BRUSH = 1;
-const Sint32 HELIX_EVENT_PENCIL = 2;
-const Sint32 HELIX_EVENT_ERASER = 3;
-const Sint32 HELIX_EVENT_BUCKET = 4;
-const Sint32 HELIX_BACKGROUND_RESIZE = 5;
 
 // HACK: Should be doing this programmatically but hard coding for testing
 constexpr std::array<SDL_Point, 16> SIZE_OFFSETS = {
@@ -24,18 +16,11 @@ constexpr std::array<SDL_Point, 16> SIZE_OFFSETS = {
     SDL_Point{25, -50},
 };
 
-typedef struct ToolProps {
-    SDL_FColor color{0.0f, 0.0f, 0.0f, SDL_ALPHA_OPAQUE_FLOAT};
-    int size{1};
-} ToolProps;
-
 class Toolbox {
   public:
     Toolbox() {
-        SDL_Log("HELIX_EVENT ID: %ud", HELIX_EVENT);
         SDL_zero(mEvent);
-
-        mEvent.type = HELIX_EVENT;
+        mEvent.type = Constants::HelixEvent;
         mEvent.user.data1 = &mToolProps;
     };
     ~Toolbox() {};
