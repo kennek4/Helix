@@ -17,4 +17,12 @@ typedef struct ToolProps {
     int size{1};
 } ToolProps;
 
+typedef struct Grid {
+    std::vector<SDL_FRect> frects;
+    std::vector<SDL_FColor> colors;
+    std::vector<char> states;
+    int widthInPixels{32};
+    int heightInPixels{32};
+} Grid;
+
 }; // namespace HLX

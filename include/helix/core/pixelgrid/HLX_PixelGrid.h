@@ -1,20 +1,13 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include "HLX_EventCallbackHandler.h"
-#include "HLX_EventSystem.h"
-#include "HLX_Subscriber.h"
-#include "HLX_Toolbox.h" // TODO: Change this import to Helix Custom events thing?
+#include <HLX_Constants.h>
+#include <HLX_EventCallbackHandler.h>
+#include <HLX_EventSystem.h>
+#include <HLX_Subscriber.h>
+#include <HLX_Types.h>
 
 namespace HLX {
-
-typedef struct Grid {
-    std::vector<SDL_FRect> frects;
-    std::vector<SDL_FColor> colors;
-    std::vector<char> states;
-    int widthInPixels{32};
-    int heightInPixels{32};
-} Grid;
 
 class PixelGrid : public Subscriber {
 

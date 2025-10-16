@@ -1,6 +1,5 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_Constants.h"
-#include <SDL3/SDL_log.h>
 
 namespace {
 inline bool isRGBAColorEqual(const SDL_FColor &colorA,
@@ -19,9 +18,9 @@ void updateFRects(std::vector<SDL_FRect> &frects, const SDL_Point &minPoint,
                   const float &sideLength, const int &gridHeight) {
 
     SDL_FRect pixelData = {(float)minPoint.x, (float)minPoint.y, 25.0f, 25.0f};
-    frects.at(0) = pixelData;
+    frects[0] = pixelData;
 
-    for (int i = 1; i < frects.capacity(); i++) {
+    for (int i = 1; i < frects.size(); i++) {
         if (i % gridHeight == 0) {
             pixelData.x = minPoint.x;
             pixelData.y += sideLength;
@@ -29,7 +28,7 @@ void updateFRects(std::vector<SDL_FRect> &frects, const SDL_Point &minPoint,
             pixelData.x += sideLength;
         }
 
-        frects.at(i) = pixelData;
+        frects[i] = pixelData;
     };
 };
 }; // namespace
@@ -39,7 +38,7 @@ PixelGrid::PixelGrid(SDLProps *sdlProps, const int widthInPixels,
                      const int heightInPixels)
     : mSDLProps(sdlProps) {
 
-    const int totalPixelCount = mGrid.widthInPixels * mGrid.heightInPixels;
+    const int &totalPixelCount = mGrid.widthInPixels * mGrid.heightInPixels;
     SDL_Log("totalPixelCount: %d", totalPixelCount);
 
     SDL_Log("Reserving vector space...");
@@ -50,12 +49,10 @@ PixelGrid::PixelGrid(SDLProps *sdlProps, const int widthInPixels,
     mGrid.frects.assign(totalPixelCount, SDL_FRect{0.0f, 0.0f, 0.0f, 0.0f});
 
     mGrid.colors.reserve(totalPixelCount);
-    mGrid.colors.assign(
-        totalPixelCount,
-        SDL_FColor{1.0f, 1.0f, 1.0f, SDL_ALPHA_TRANSPARENT_FLOAT});
+    mGrid.colors.assign(totalPixelCount, Constants::EmptyPixelFColor);
 
     mGrid.states.reserve(totalPixelCount);
-    mGrid.states.assign(totalPixelCount, 0);
+    mGrid.states.assign(totalPixelCount, Constants::PixelStateEmpty);
 };
 
 PixelGrid::~PixelGrid() {};
@@ -96,6 +93,10 @@ void PixelGrid::reset() {
     if (mGrid.frects.empty()) {
         return;
     }
+
+    const int &numOfPixels = mGrid.widthInPixels * mGrid.heightInPixels;
+    mGrid.states.assign(numOfPixels, Constants::PixelStateEmpty);
+    mGrid.colors.assign(numOfPixels, Constants::EmptyPixelFColor);
 
     for (int i = 0; i < (mGrid.widthInPixels * mGrid.heightInPixels); i++) {
         mGrid.colors.at(i) = {1.0f, 1.0f, 1.0f, SDL_ALPHA_TRANSPARENT_FLOAT};
@@ -149,11 +150,12 @@ void PixelGrid::registerToolCallbacks() {
         switch (event->user.code) {
         case Constants::HelixEventToolBrush:
             handleBrushEvent(startPoint, toolProps->color, toolProps->size,
-                             true, brushIndicies);
+                             Constants::PixelStateFilled, brushIndicies);
             break;
         case Constants::HelixEventToolEraser:
-            handleBrushEvent(startPoint, HLX::Constants::EmptyPixelFColor,
-                             toolProps->size, false, brushIndicies);
+            handleBrushEvent(startPoint, Constants::EmptyPixelFColor,
+                             toolProps->size, Constants::PixelStateEmpty,
+                             brushIndicies);
             break;
         case Constants::HelixEventToolBucket:
             handleBucketEvent(startPoint, toolProps->color);
@@ -173,7 +175,7 @@ void PixelGrid::handleBrushEvent(const SDL_Point &startPoint,
 
     SDL_Point currentPoint;
     for (int i = 0; i < (brushSize * brushSize); i++) {
-        const SDL_Point &offsets = SIZE_OFFSETS.at(i);
+        const SDL_Point &offsets = Constants::BrushSizePointOffsets[i];
         currentPoint = {startPoint.x - offsets.x, startPoint.y - offsets.y};
 
         if (!isPointInGrid(currentPoint)) {
@@ -202,7 +204,6 @@ void PixelGrid::handleBucketEvent(const SDL_Point &startPoint,
 
     int pixelIndex = getPixelIndex(startPoint.x, startPoint.y, mMinPoint,
                                    mGrid.widthInPixels);
-
     const SDL_FColor originalColor = mGrid.colors.at(pixelIndex);
 
     if (isRGBAColorEqual(originalColor, bucketColor)) {
@@ -227,14 +228,14 @@ void PixelGrid::handleBucketEvent(const SDL_Point &startPoint,
         pixelIndex = getPixelIndex(currentPoint.x, currentPoint.y, mMinPoint,
                                    mGrid.widthInPixels);
 
-        currentColor = mGrid.colors.at(pixelIndex);
+        currentColor = mGrid.colors[pixelIndex];
 
         if (!isRGBAColorEqual(originalColor, currentColor)) {
             continue;
         };
 
-        mGrid.colors.at(pixelIndex) = bucketColor;
-        mGrid.states.at(pixelIndex) = true;
+        mGrid.colors[pixelIndex] = bucketColor;
+        mGrid.states[pixelIndex] = Constants::PixelStateFilled;
 
         queue.emplace(SDL_Point{currentPoint.x - 25, currentPoint.y});
         queue.emplace(SDL_Point{currentPoint.x, currentPoint.y - 25});
