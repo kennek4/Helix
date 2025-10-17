@@ -59,7 +59,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     helix.renderer->createGrid(helix.pixelGrid->getGridData());
 
     HLX::GUI::newFrame();
-    HLX::GUI::renderPalette(helix.toolbox.getToolColor());
     HLX::GUI::renderToolbox(helix.toolbox);
     HLX::GUI::renderToolbar();
     HLX::GUI::renderFrame(helix.sdlProps.renderer);

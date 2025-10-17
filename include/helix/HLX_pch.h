@@ -1,6 +1,7 @@
 #pragma once
 
 // C++
+#include <array>
 #include <cmath>
 #include <functional>
 #include <map>
@@ -8,6 +9,7 @@
 #include <queue>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
