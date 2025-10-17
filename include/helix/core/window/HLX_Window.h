@@ -1,21 +1,11 @@
 #pragma once
 
 #include "../HLX_pch.h"
+#include <HLX_Types.h>
 
 namespace HLX {
 
 static bool isHelixWindowInitialized = false;
-
-typedef struct SDLProps {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    SDL_Cursor *cursor;
-} SDLProps;
-
-typedef struct WindowProps {
-    int width;
-    int height;
-} WindowProps;
 
 class Window {
   public:

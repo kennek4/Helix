@@ -3,9 +3,10 @@ project(HELIX_INCLUDE_CMAKE)
 include(core/CMakeLists.txt)
 include(events/CMakeLists.txt)
 include(gui/CMakeLists.txt)
+include(utility/CMakeLists.txt)
 
 set(HELIX_HEADER ${HELIX_CORE_HEADER} ${HELIX_EVENTS_HEADER}
-                 ${HELIX_GUI_HEADER} HLX_pch.h)
+                 ${HELIX_GUI_HEADER} ${HELIX_UTILITY_HEADER})
 set(HELIX_SRC ${HELIX_CORE_SRC} ${HELIX_EVENTS_SRC} ${HELIX_GUI_SRC})
 list(APPEND HELIX_SRC ${HELIX_HEADER})
 
@@ -46,5 +47,6 @@ target_include_directories(
   PUBLIC ${HELIX_ROOT}/include/helix/core/window
   PUBLIC ${HELIX_ROOT}/include/helix/core/renderer
   PUBLIC ${HELIX_ROOT}/include/helix/events
-  PUBLIC ${HELIX_ROOT}/include/helix/gui)
+  PUBLIC ${HELIX_ROOT}/include/helix/gui
+  PUBLIC ${HELIX_ROOT}/include/helix/utility)
 target_link_libraries(HELIX_LIB imgui SDL3::SDL3 stb_image)

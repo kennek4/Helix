@@ -1,13 +1,7 @@
 #include "HLX_Gui.h"
-#include "HLX_EventSystem.h"
-#include "HLX_Toolbox.h"
-#include "image/HLX_Image.h"
+#include "HLX_Constants.h"
 #include "imgui.h"
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <array>
-#include <functional>
-#include <utility>
+#include <string_view>
 
 namespace HLX {
 namespace GUI {
@@ -64,44 +58,49 @@ void shutdown() {
     ImGui::DestroyContext();
 };
 
-void renderPalette(SDL_FColor *toolColor) {
-    constexpr ImGuiColorEditFlags flags = ImGuiColorEditFlags_InputRGB;
-    static ImVec4 rawColor{0.0f, 0.0f, 0.0f, 1.0f};
-
-    ImGui::Begin("Palette");
-    ImGui::ColorPicker4("HelixColorPicker", (float *)&rawColor, flags);
-
-    if (ImGui::IsItemEdited()) {
-        *toolColor = {rawColor.x, rawColor.y, rawColor.z, rawColor.w};
-    };
-
-    ImGui::End();
-};
-
 void renderToolbox(Toolbox &toolbox) {
-    constexpr std::array<const char *, 3> TOOL_NAMES = {"Brush", "Eraser",
-                                                        "Bucket"};
-    constexpr std::array<Sint32, 3> TOOL_TYPES = {
-        HELIX_EVENT_BRUSH, HELIX_EVENT_ERASER, HELIX_EVENT_BUCKET};
+    constexpr ImGuiWindowFlags windowFlags =
+        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_AlwaysAutoResize;
 
     static int selectedTool = 0;
     static bool needsUpdate = true;
 
-    ImGui::Begin("Toolbox");
-    for (int i = 0; i < TOOL_NAMES.size(); i++) {
+    ImGui::Begin("Toolbox", NULL, windowFlags);
+    ImGui::SeparatorText("Tools");
+
+    for (int i = 0; i < Constants::EventCodes.size(); i++) {
         ImGui::PushID(i);
-        if (ImGui::RadioButton(TOOL_NAMES.at(i), &selectedTool, i)) {
+
+        const Sint32 &eventCode = Constants::EventCodes[i];
+        const std::string_view &label =
+            Constants::ToolEventCodeToNameMap[eventCode];
+
+        if (ImGui::RadioButton(label.data(), &selectedTool, i)) {
             needsUpdate = true;
         };
+
         ImGui::PopID();
     };
 
-    ImGui::SliderInt("Brush Size", toolbox.getToolSize(), 1, 4);
+    ImGui::SeparatorText("Brush Sizes");
+    ImGui::RadioButton("1", toolbox.getToolSize(), 1);
+    ImGui::SameLine();
+    ImGui::RadioButton("2", toolbox.getToolSize(), 2);
+    ImGui::SameLine();
+    ImGui::RadioButton("3", toolbox.getToolSize(), 3);
+    ImGui::SameLine();
+    ImGui::RadioButton("4", toolbox.getToolSize(), 4);
+
+    ImGui::SeparatorText("Brush Colors");
+    ImGui::ColorEdit4("Primary Color", (float *)&toolbox.getToolColor()[0],
+                      ImGuiColorEditFlags_NoInputs);
 
     ImGui::End();
 
     if (needsUpdate) {
-        toolbox.setTool(TOOL_TYPES.at(selectedTool));
+        toolbox.setTool(selectedTool);
         needsUpdate = false;
     }
 };
