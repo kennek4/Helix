@@ -1,9 +1,8 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include "HLX_PixelGrid.h"
+#include "HLX_Constants.h"
 #include "HLX_Toolbox.h"
-#include "image/HLX_Image.h"
 
 namespace HLX {
 namespace GUI {
