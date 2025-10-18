@@ -48,5 +48,7 @@ target_include_directories(
   PUBLIC ${HELIX_ROOT}/include/helix/core/renderer
   PUBLIC ${HELIX_ROOT}/include/helix/events
   PUBLIC ${HELIX_ROOT}/include/helix/gui
-  PUBLIC ${HELIX_ROOT}/include/helix/utility)
-target_link_libraries(HELIX_LIB imgui SDL3::SDL3 stb_image)
+  PUBLIC ${HELIX_ROOT}/include/helix/utility
+  PRIVATE ${HELIX_ROOT}/include/IGFD)
+
+target_link_libraries(HELIX_LIB imgui SDL3::SDL3 stb_image ImGuiFileDialog)
