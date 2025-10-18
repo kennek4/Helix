@@ -13,8 +13,10 @@ inline constexpr Sint32 HelixEventToolEraser = 1;
 inline constexpr Sint32 HelixEventToolBucket = 2;
 inline constexpr Sint32 HelixEventToolColorPicker = 3;
 inline constexpr Sint32 HelixEventToolShape = 4;
+inline constexpr Sint32 EventGUIHasPriority = 5;
+inline constexpr Sint32 EventGUINoPriority = 6;
 
-inline constexpr std::array<Sint32, 5> EventCodes{
+inline constexpr std::array<Sint32, 5> ToolEventCodes{
     HelixEventToolBrush, HelixEventToolEraser, HelixEventToolBucket,
     HelixEventToolColorPicker, HelixEventToolShape};
 

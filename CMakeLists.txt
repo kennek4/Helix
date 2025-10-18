@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Directories
 add_subdirectory(src)
+add_subdirectory(include/IGFD)
 add_subdirectory(include/helix)
 add_subdirectory(include/imgui)
 add_subdirectory(include/stb_image)

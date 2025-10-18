@@ -29,6 +29,7 @@ typedef struct HelixState {
     int windowHeight{720};
 
     // ImGui
+    GuiProps guiProps;
 
     // HLX
     Window *window{nullptr};

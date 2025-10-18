@@ -1,5 +1,7 @@
 #include "HLX_EventSystem.h"
+#include "HLX_Constants.h"
 #include "HLX_Subscriber.h"
+#include <HLX_Constants.h>
 #include <SDL3/SDL_log.h>
 
 inline bool isSubscriberInTopic(Uint32 *type, HLX::Subscriber *subscriber,
@@ -48,6 +50,13 @@ void EventSystem::unsubscribe(Uint32 type, Subscriber *subscriber) {
 void EventSystem::publishToTopic(SDL_Event *event) {
     if (!mEventToTopic.contains(event->type)) {
         // Discard event, no listeners.
+        if (event->user.code == HLX::Constants::EventGUINoPriority) {
+            SDL_Log("No listeners for gui no prio");
+        }
+        if (event->user.code == HLX::Constants::EventGUIHasPriority) {
+            SDL_Log("No listeners for gui has prio");
+            SDL_Log("No listeners for gui no prio");
+        }
         return;
     }
 

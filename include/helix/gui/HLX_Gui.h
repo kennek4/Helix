@@ -1,24 +1,29 @@
 #pragma once
 
 #include "../HLX_pch.h"
-#include "HLX_Constants.h"
-#include "HLX_Toolbox.h"
+#include <HLX_Constants.h>
+#include <HLX_EventSystem.h>
+#include <HLX_Toolbox.h>
+#include <HLX_Types.h>
 
 namespace HLX {
 namespace GUI {
 
-static bool isHelixGuiInitialized = false;
-
 void init(SDL_Renderer *renderer, SDL_Window *window);
-void newFrame();
-void renderFrame(SDL_Renderer *renderer);
 void shutdown();
-
 void handleEvent(SDL_Event *event);
 
-void renderPalette(SDL_FColor *toolColor);
-void renderToolbox(Toolbox &toolbox);
-void renderToolbar();
+void createFrame();
+void renderFrame(SDL_Renderer *renderer);
+void renderElements(GuiProps &props);
+
+void renderToolbox(GuiProps &props, Toolbox &toolbox);
+void renderToolbar(GuiProps &props);
+
+void showSaveScreen(GuiProps *props);
+void showKeybindMenu();
+void showCreditsScreen();
+void showExitConfirmation();
 
 }; // namespace GUI
 }; // namespace HLX

@@ -1,5 +1,6 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_Constants.h"
+#include <SDL3/SDL_log.h>
 
 namespace {
 inline bool isRGBAColorEqual(const SDL_FColor &colorA,
@@ -125,12 +126,20 @@ void PixelGrid::registerWindowCallbacks() {
 
     auto handleMouseMotion = [this](SDL_Event *event) -> void {
         SDL_ConvertEventToRenderCoordinates(mSDLProps->renderer, event);
-        mMousePos = {(event->motion.x), (event->motion.y)};
+        mMousePos = {event->motion.x, event->motion.y};
     };
 
     HLX::EventSystem::getInstance().subscribe(SDL_EVENT_MOUSE_MOTION, this);
     mCallbackHandler.registerCallback(SDL_EVENT_MOUSE_MOTION,
                                       handleMouseMotion);
+
+    // EventSystem::getInstance().getInstance().subscribe(Constants::HelixEvent,
+    //                                                    this);
+    // mCallbackHandler.registerCallback(
+    //     Constants::HelixEvent, [this](SDL_Event *event) -> void {
+    //         const bool &isGuiPriority = (bool)(event->user.data1);
+    //         mIsActive = isGuiPriority;
+    //     });
 };
 
 void PixelGrid::registerToolCallbacks() {
@@ -139,6 +148,18 @@ void PixelGrid::registerToolCallbacks() {
 
     const auto handleToolEvent = [this](SDL_Event *event) -> void {
         static SDL_Point startPoint;
+
+        switch (event->user.code) {
+        case Constants::EventGUIHasPriority:
+            mIsActive = false;
+            break;
+        case Constants::EventGUINoPriority:
+            mIsActive = true;
+            break;
+        }
+
+        if (!mIsActive)
+            return;
 
         ToolProps *toolProps = static_cast<ToolProps *>(event->user.data1);
 
@@ -172,8 +193,8 @@ void PixelGrid::handleBrushEvent(const SDL_Point &startPoint,
                                  const int &brushSize, const bool isPixelActive,
                                  std::vector<int> &brushIndicies) {
     brushIndicies.clear();
-
     SDL_Point currentPoint;
+
     for (int i = 0; i < (brushSize * brushSize); i++) {
         const SDL_Point &offsets = Constants::BrushSizePointOffsets[i];
         currentPoint = {startPoint.x - offsets.x, startPoint.y - offsets.y};
@@ -261,8 +282,11 @@ inline void PixelGrid::setGridBounds(const int newWindowWidth,
 };
 
 inline bool PixelGrid::isPointInGrid(const SDL_Point &point) {
-    return ((point.x >= mMinPoint.x) && (point.x < mMaxPoint.x)) &&
-           ((point.y >= mMinPoint.y) && (point.y < mMaxPoint.y));
+    const bool &inGrid =
+        ((point.x >= mMinPoint.x) && (point.x < mMaxPoint.x)) &&
+        ((point.y >= mMinPoint.y) && (point.y < mMaxPoint.y));
+
+    return inGrid;
 };
 
 inline bool PixelGrid::isPixelEmpty(const int &pixelIndex) {
