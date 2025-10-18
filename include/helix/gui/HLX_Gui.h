@@ -15,12 +15,12 @@ void handleEvent(SDL_Event *event);
 
 void createFrame();
 void renderFrame(SDL_Renderer *renderer);
-void renderElements(GuiProps &props);
+void renderElements(GuiProps &props, Toolbox &toolbox, const Grid &grid);
 
 void renderToolbox(GuiProps &props, Toolbox &toolbox);
 void renderToolbar(GuiProps &props);
 
-void showSaveScreen(GuiProps *props);
+void showSaveScreen(const Grid &grid);
 void showKeybindMenu();
 void showCreditsScreen();
 void showExitConfirmation();

@@ -3,11 +3,9 @@
 #include "HLX_EventSystem.h"
 #include "HLX_Types.h"
 #include "ImGuiFileDialog.h"
+#include "image/HLX_Image.h"
 #include "imgui.h"
 #include <SDL3/SDL_log.h>
-#include <SDL3/SDL_mouse.h>
-#include <SDL3/SDL_stdinc.h>
-#include <string>
 
 namespace HLX {
 namespace GUI {
@@ -20,8 +18,6 @@ void init(SDL_Renderer *renderer, SDL_Window *window) {
     (void)io;
     io.ConfigFlags |=
         ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableGamepad;            // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
 
     // Setup Dear ImGui style
@@ -54,13 +50,14 @@ void renderFrame(SDL_Renderer *renderer) {
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 };
 
-void renderElements(GuiProps &props) {
-    static SDL_Event event;
+void renderElements(GuiProps &props, Toolbox &toolbox, const Grid &grid) {
     if (props.isSaveScreenActive) {
-        showSaveScreen(&props);
-    }
+        showSaveScreen(grid);
+    };
+
     if (props.isKeybindMenuActive)
         showKeybindMenu();
+
     if (props.isCreditsScreenActive)
         showCreditsScreen();
 };
@@ -182,23 +179,28 @@ void renderToolbar(GuiProps &props) {
     ImGui::End();
 };
 
-void showSaveScreen(GuiProps *props) {
-    static std::string fileName{};
-    static SDL_Event event;
-
+void showSaveScreen(const Grid &grid) {
     ImGuiIO &io = ImGui::GetIO();
-
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
     if (ImGuiFileDialog::Instance()->Display("SaveFileDlgKey")) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
-            std::string filePathName =
+            std::string fileName =
+                ImGuiFileDialog::Instance()->GetCurrentFileName();
+            std::string fileNamePath =
                 ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath =
                 ImGuiFileDialog::Instance()->GetCurrentPath();
 
-            SDL_Log("Saving file %s at %s", filePathName.c_str(),
-                    filePath.c_str());
+            if (!HLX::Image::validFileName(fileName)) {
+                SDL_Log("The file name path,  %s , given is invalid.",
+                        fileName.c_str());
+            } else {
+                SDL_Log("Saving file %s at %s", fileName.c_str(),
+                        filePath.c_str());
+                HLX::Image::savePNG(grid.widthInPixels, grid.heightInPixels,
+                                    grid.colors, fileNamePath.c_str());
+            };
 
             static SDL_Event event;
             event.type = Constants::HelixEvent;

@@ -59,7 +59,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     HLX::GUI::createFrame();
     HLX::GUI::renderToolbox(helix.guiProps, helix.toolbox);
     HLX::GUI::renderToolbar(helix.guiProps);
-    HLX::GUI::renderElements(helix.guiProps);
+    HLX::GUI::renderElements(helix.guiProps, helix.toolbox,
+                             helix.pixelGrid->getGridData());
     HLX::GUI::renderFrame(helix.sdlProps.renderer);
 
     helix.renderer->render();

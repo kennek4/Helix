@@ -1,4 +1,6 @@
 #include "HLX_Image.h"
+#include "stb/stb_image.h"
+#include <regex>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -7,87 +9,68 @@
 #include <stb_image_write.h>
 
 namespace HLX {
+namespace Image {
 
-// --------------------- //
-//         PNG           //
-// --------------------- //
+bool validFileName(std::string &fileName) {
+    if (fileName.empty() || fileName.length() > 255)
+        return false;
 
-ImagePNG::ImagePNG(bool hasAlpha) { setAlpha(hasAlpha); };
+    // HACK: Hardcoding to validate only .png files
+    const std::regex validChars{"^[\\w,\\s-]+\\.png"};
 
-bool ImagePNG::saveToFile(const int &IMAGE_WIDTH, const int &IMAGE_HEIGHT,
-                          const std::vector<SDL_FColor> &PIXEL_COLORS,
-                          const char *FILE_NAME) {
+    return std::regex_match(fileName, validChars);
+};
+
+bool savePNG(const int &imageWidth, const int &imageHeight,
+             const std::vector<SDL_FColor> &pixelColors, const char *fileName) {
+
+    int comp = STBI_rgb_alpha;
     bool success = false;
 
-    const int CHANNELS_NEEDED = PIXEL_COLORS.size() * mComp;
+    const int CHANNELS_NEEDED = pixelColors.size() * comp;
     Uint8 *imageData = new Uint8[CHANNELS_NEEDED]();
 
     int index = 0;
-    for (const SDL_FColor &PIXEL_COLOR : PIXEL_COLORS) {
-        imageData[index++] = (int)(PIXEL_COLOR.r * 255.99f);
-        imageData[index++] = (int)(PIXEL_COLOR.g * 255.99f);
-        imageData[index++] = (int)(PIXEL_COLOR.b * 255.99f);
+    for (const SDL_FColor &pixelColor : pixelColors) {
+        imageData[index++] = (int)(pixelColor.r * 255.99f);
+        imageData[index++] = (int)(pixelColor.g * 255.99f);
+        imageData[index++] = (int)(pixelColor.b * 255.99f);
 
-        if (mComp == STBI_rgb_alpha) {
-            imageData[index++] = (int)(PIXEL_COLOR.a * 255.99f);
+        if (comp == STBI_rgb_alpha) {
+            imageData[index++] = (int)(pixelColor.a * 255.99f);
         };
     };
 
-    success = stbi_write_png(FILE_NAME, IMAGE_WIDTH, IMAGE_HEIGHT, mComp,
-                             imageData, IMAGE_WIDTH * mComp) != 0;
+    success = stbi_write_png(fileName, imageWidth, imageHeight, comp, imageData,
+                             imageWidth * comp) != 0;
 
     delete[] imageData;
     return success;
 };
 
-void ImagePNG::setAlpha(bool hasAlpha) {
-    if (hasAlpha) {
-        mComp = STBI_rgb;
-    } else {
-        mComp = STBI_rgb_alpha;
-    };
-};
+bool saveJPG(const int &imageWidth, const int &imageHeight,
+             const std::vector<SDL_FColor> &pixelColors, const char *fileName) {
 
-void ImagePNG::setFilter(PNGFilter filter) {
-    stbi_write_force_png_filter = (int)filter;
-};
-
-void ImagePNG::setCompression(int compression) {
-    stbi_write_png_compression_level = compression;
-};
-
-// --------------------- //
-//         JPG           //
-// --------------------- //
-
-ImageJPG::ImageJPG() {
-    mQuality = 75;
-    mComp = STBI_rgb;
-}
-
-bool ImageJPG::saveToFile(const int &IMAGE_WIDTH, const int &IMAGE_HEIGHT,
-                          const std::vector<SDL_FColor> &PIXEL_COLORS,
-                          const char *FILE_NAME) {
-
+    int comp = STBI_rgb_alpha;
+    int quality = 75;
     bool success = false;
 
-    const int CHANNELS_NEEDED = PIXEL_COLORS.size() * mComp;
+    const int CHANNELS_NEEDED = pixelColors.size() * comp;
     Uint8 *imageData = new Uint8[CHANNELS_NEEDED]();
 
     int index = 0;
-    for (const SDL_FColor &PIXEL_COLOR : PIXEL_COLORS) {
+    for (const SDL_FColor &PIXEL_COLOR : pixelColors) {
         imageData[index++] = (int)(PIXEL_COLOR.r * 255.99f);
         imageData[index++] = (int)(PIXEL_COLOR.g * 255.99f);
         imageData[index++] = (int)(PIXEL_COLOR.b * 255.99f);
     };
 
-    success = stbi_write_jpg(FILE_NAME, IMAGE_WIDTH, IMAGE_HEIGHT, mComp,
-                             imageData, mQuality) != 0;
+    success = stbi_write_jpg(fileName, imageWidth, imageHeight, comp, imageData,
+                             quality) != 0;
 
     delete[] imageData;
     return success;
 };
 
-void ImageJPG::setQuality(int quality) { mQuality = quality; };
-
+} // namespace Image
 }; // namespace HLX
