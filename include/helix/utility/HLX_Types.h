@@ -20,6 +20,12 @@ typedef struct ToolProps {
     int size{1};
 } ToolProps;
 
+typedef struct GuiProps {
+    bool isKeybindMenuActive{false};
+    bool isCreditsScreenActive{false};
+    bool isSaveScreenActive{false};
+} GuiProps;
+
 typedef struct Grid {
     std::vector<SDL_FRect> frects;
     std::vector<SDL_FColor> colors;

@@ -1,7 +1,5 @@
 #include "HLX_Gui.h"
-#include "HLX_PixelGrid.h"
 #include "Helix.h"
-#include <functional>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
@@ -58,9 +56,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
                                      25.0f / 256.0f);
     helix.renderer->createGrid(helix.pixelGrid->getGridData());
 
-    HLX::GUI::newFrame();
-    HLX::GUI::renderToolbox(helix.toolbox);
-    HLX::GUI::renderToolbar();
+    HLX::GUI::createFrame();
+    HLX::GUI::renderToolbox(helix.guiProps, helix.toolbox);
+    HLX::GUI::renderToolbar(helix.guiProps);
+    HLX::GUI::renderElements(helix.guiProps);
     HLX::GUI::renderFrame(helix.sdlProps.renderer);
 
     helix.renderer->render();

@@ -22,6 +22,7 @@ class PixelGrid : public Subscriber {
 
     inline const SDL_FRect &getBackgroundFRect() { return mBackgroundFRect; };
     inline const Grid &getGridData() { return mGrid; };
+    inline bool *getIsActive() { return &mIsActive; };
 
   private:
     Grid mGrid;
@@ -35,6 +36,8 @@ class PixelGrid : public Subscriber {
     SDL_Point mMaxPoint;
 
     SDL_FRect mBackgroundFRect;
+
+    bool mIsActive = true;
 
     void registerWindowCallbacks();
     void registerToolCallbacks();
