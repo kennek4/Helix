@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_pixels.h>
 #include <array>
 #include <stdexcept>
 #include <utility>
@@ -16,7 +18,9 @@ typedef struct WindowProps {
 } WindowProps;
 
 typedef struct ToolProps {
-    SDL_FColor color{0.0f, 0.0f, 0.0f, SDL_ALPHA_OPAQUE_FLOAT};
+    SDL_FColor primary = SDL_FColor{0.0f, 0.0f, 0.0f, 1.0f};
+    SDL_FColor secondary = SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f};
+    SDL_FColor *currentColor{&primary};
     int size{1};
 } ToolProps;
 

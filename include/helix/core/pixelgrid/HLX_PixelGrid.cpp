@@ -79,7 +79,6 @@ bool PixelGrid::init() {
     const float sideLength = 25 * 1.0f; // TODO: Update this ZoomLevel later
     updateFRects(mGrid.frects, mMinPoint, sideLength, mGrid.heightInPixels);
 
-    // TODO: Update background FRect here
     mBackgroundFRect = {
         (float)mMinPoint.x,
         (float)mMinPoint.y,
@@ -132,14 +131,6 @@ void PixelGrid::registerWindowCallbacks() {
     HLX::EventSystem::getInstance().subscribe(SDL_EVENT_MOUSE_MOTION, this);
     mCallbackHandler.registerCallback(SDL_EVENT_MOUSE_MOTION,
                                       handleMouseMotion);
-
-    // EventSystem::getInstance().getInstance().subscribe(Constants::HelixEvent,
-    //                                                    this);
-    // mCallbackHandler.registerCallback(
-    //     Constants::HelixEvent, [this](SDL_Event *event) -> void {
-    //         const bool &isGuiPriority = (bool)(event->user.data1);
-    //         mIsActive = isGuiPriority;
-    //     });
 };
 
 void PixelGrid::registerToolCallbacks() {
@@ -170,8 +161,9 @@ void PixelGrid::registerToolCallbacks() {
 
         switch (event->user.code) {
         case Constants::HelixEventToolBrush:
-            handleBrushEvent(startPoint, toolProps->color, toolProps->size,
-                             Constants::PixelStateFilled, brushIndicies);
+            handleBrushEvent(startPoint, *toolProps->currentColor,
+                             toolProps->size, Constants::PixelStateFilled,
+                             brushIndicies);
             break;
         case Constants::HelixEventToolEraser:
             handleBrushEvent(startPoint, Constants::EmptyPixelFColor,
@@ -179,7 +171,7 @@ void PixelGrid::registerToolCallbacks() {
                              brushIndicies);
             break;
         case Constants::HelixEventToolBucket:
-            handleBucketEvent(startPoint, toolProps->color);
+            handleBucketEvent(startPoint, *toolProps->currentColor);
             break;
         }
     };

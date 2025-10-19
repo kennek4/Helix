@@ -27,6 +27,7 @@ void init(SDL_Renderer *renderer, SDL_Window *window) {
     // Setup scaling
     ImGuiStyle &style = ImGui::GetStyle();
     style = ImGui::GetStyle();
+
     ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer3_Init(renderer);
 };
@@ -71,8 +72,15 @@ void renderToolbox(GuiProps &props, Toolbox &toolbox) {
     static int selectedTool = 0;
     static bool needsUpdate = true;
 
+    ImGuiIO &io = ImGui::GetIO();
+    const float &center = ImGui::GetMainViewport()->GetCenter().y;
+
+    ImGui::SetNextWindowPos(ImVec2(0.0f, center), ImGuiCond_Always,
+                            ImVec2(0.0f, 0.5f));
+
     ImGui::Begin("Toolbox", NULL, windowFlags);
     ImGui::SeparatorText("Tools");
+    ImGui::NewLine();
 
     for (int i = 0; i < Constants::ToolEventCodes.size(); i++) {
         ImGui::PushID(i);
@@ -89,25 +97,27 @@ void renderToolbox(GuiProps &props, Toolbox &toolbox) {
     };
 
     ImGui::NewLine();
-    ImGui::NewLine();
-
-    ImGui::SeparatorText("Brush Sizes");
-    ImGui::RadioButton("1", toolbox.getToolSize(), 1);
-    ImGui::SameLine();
-    ImGui::RadioButton("2", toolbox.getToolSize(), 2);
-    ImGui::SameLine();
-    ImGui::RadioButton("3", toolbox.getToolSize(), 3);
-    ImGui::SameLine();
-    ImGui::RadioButton("4", toolbox.getToolSize(), 4);
-
-    ImGui::NewLine();
-    ImGui::NewLine();
-
     ImGui::SeparatorText("Colors");
-    ImGui::ColorEdit4("Primary", (float *)&toolbox.getToolColor()[0],
-                      ImGuiColorEditFlags_NoInputs);
+    ImGui::NewLine();
+    constexpr ImGuiColorEditFlags editFlags = ImGuiColorEditFlags_NoInputs |
+                                              ImGuiColorEditFlags_NoLabel |
+                                              ImGuiColorEditFlags_NoSidePreview;
+    ImGui::Text("Primary");
+    ImGui::SameLine();
+    ImGui::ColorEdit4("Primary", (float *)&toolbox.getPrimaryColor()[0],
+                      editFlags);
 
-    // ImGui::ColorEdit4("Secondary", NULL, ImGuiColorEditFlags_NoInputs);
+    ImGui::Text("Secondary");
+    ImGui::SameLine();
+    ImGui::ColorEdit4("Secondary", (float *)&toolbox.getSecondaryColor()[0],
+                      editFlags);
+
+    ImGui::NewLine();
+    ImGui::SeparatorText("Tool Props.");
+    ImGui::NewLine();
+    ImGui::SliderInt("Tool Size", toolbox.getToolSize(), 1, 4);
+
+    ImGui::NewLine();
     ImGui::End();
 
     if (needsUpdate) {
@@ -163,8 +173,40 @@ void renderToolbar(GuiProps &props) {
     }
 
     ImGui::Separator();
+    static bool isActive{true};
+    static int selectedItem = 0;
+    static const char *colorSchemePreview = Constants::ColorSchemes[0].data();
+
     if (ImGui::BeginMenu("View")) {
-        ImGui::Text("Nothing here yet... :(");
+        if (ImGui::BeginCombo("Color Schemes", colorSchemePreview,
+                              ImGuiComboFlags_HeightSmall |
+                                  ImGuiComboFlags_NoPreview)) {
+            for (int i = 0; i < Constants::ColorSchemes.size(); i++) {
+                const bool isSelected = (selectedItem == i);
+                if (ImGui::Selectable(Constants::ColorSchemes[i].data(),
+                                      isSelected))
+                    selectedItem = i;
+
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                };
+            };
+
+            ImGui::EndCombo();
+        };
+
+        switch (selectedItem) {
+        case 0:
+            ImGui::StyleColorsDark();
+            break;
+        case 1:
+            ImGui::StyleColorsLight();
+            break;
+        case 2:
+            ImGui::StyleColorsClassic();
+            break;
+        }
+
         ImGui::EndMenu();
     }
 
@@ -181,8 +223,13 @@ void renderToolbar(GuiProps &props) {
 
 void showSaveScreen(const Grid &grid) {
     ImGuiIO &io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+    const float &winWidth = io.DisplaySize.x;
+    const float &winHeight = io.DisplaySize.y;
+    const ImVec2 &center = ImGui::GetMainViewport()->GetCenter();
+
+    ImGui::SetNextWindowSize(ImVec2(winWidth * 0.5f, winHeight * 0.5f));
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
     if (ImGuiFileDialog::Instance()->Display("SaveFileDlgKey")) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
             std::string fileName =
@@ -195,6 +242,7 @@ void showSaveScreen(const Grid &grid) {
             if (!HLX::Image::validFileName(fileName)) {
                 SDL_Log("The file name path,  %s , given is invalid.",
                         fileName.c_str());
+
             } else {
                 SDL_Log("Saving file %s at %s", fileName.c_str(),
                         filePath.c_str());
@@ -207,6 +255,7 @@ void showSaveScreen(const Grid &grid) {
             event.user.code = Constants::EventGUINoPriority;
             EventSystem::getInstance().publishToTopic(&event);
         };
+
         ImGuiFileDialog::Instance()->Close();
     };
 };

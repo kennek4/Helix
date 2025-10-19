@@ -2,6 +2,8 @@
 
 #include "../HLX_pch.h"
 #include <HLX_Types.h>
+#include <array>
+#include <string_view>
 
 namespace HLX {
 namespace Constants {
@@ -40,6 +42,10 @@ constexpr std::array<std::pair<Sint32, std::string_view>, 5>
 
 inline constexpr ConstMap<Sint32, std::string_view, 5> ToolEventCodeToNameMap{
     ToolEventCodeNamePairsArray};
+
+constexpr std::array<std::string_view, 3> ColorSchemes{
+    {std::string_view{"Dark"}, std::string_view{"Light"},
+     std::string_view{"Classic"}}};
 
 // HACK: Should be doing this programmatically but
 // hard coding for testing
