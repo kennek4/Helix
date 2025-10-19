@@ -4,6 +4,7 @@
 #include <HLX_Types.h>
 #include <array>
 #include <string_view>
+#include <utility>
 
 namespace HLX {
 namespace Constants {
@@ -43,6 +44,9 @@ constexpr std::array<std::pair<Sint32, std::string_view>, 5>
 inline constexpr ConstMap<Sint32, std::string_view, 5> ToolEventCodeToNameMap{
     ToolEventCodeNamePairsArray};
 
+inline constexpr ConstMap<int, int, 3> GridSizeToPixelSideLength{
+    {std::pair{32, 30}, std::pair{64, 15}}};
+
 constexpr std::array<std::string_view, 3> ColorSchemes{
     {std::string_view{"Dark"}, std::string_view{"Light"},
      std::string_view{"Classic"}}};
@@ -50,12 +54,10 @@ constexpr std::array<std::string_view, 3> ColorSchemes{
 // HACK: Should be doing this programmatically but
 // hard coding for testing
 inline constexpr std::array<SDL_Point, 16> BrushSizePointOffsets = {
-    SDL_Point{0, 0},     SDL_Point{-25, 0},   SDL_Point{-25, -25},
-    SDL_Point{0, -25},   SDL_Point{25, -25},  SDL_Point{25, 0},
-    SDL_Point{25, 25},   SDL_Point{0, 25},    SDL_Point{-25, 25},
-    SDL_Point{-50, 25},  SDL_Point{-50, 0},   SDL_Point{-50, -25},
-    SDL_Point{-50, -50}, SDL_Point{-25, -50}, SDL_Point{0, -50},
-    SDL_Point{25, -50},
+    SDL_Point{0, 0},   SDL_Point{-1, 0},  SDL_Point{-1, -1}, SDL_Point{0, -1},
+    SDL_Point{1, -1},  SDL_Point{1, 0},   SDL_Point{1, 1},   SDL_Point{0, 1},
+    SDL_Point{-1, 1},  SDL_Point{-2, 1},  SDL_Point{-2, 0},  SDL_Point{-2, -1},
+    SDL_Point{-2, -2}, SDL_Point{-1, -2}, SDL_Point{0, -2},  SDL_Point{1, -2},
 };
 
 }; // namespace Constants

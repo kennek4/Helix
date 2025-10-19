@@ -1,6 +1,7 @@
 #include "HLX_PixelGrid.h"
 #include "HLX_Constants.h"
 #include <SDL3/SDL_log.h>
+#include <algorithm>
 
 namespace {
 inline bool isRGBAColorEqual(const SDL_FColor &colorA,
@@ -10,15 +11,17 @@ inline bool isRGBAColorEqual(const SDL_FColor &colorA,
 };
 
 inline int getPixelIndex(const int &x, const int &y, const SDL_Point &minPoint,
-                         const int &gridWidthInPixels) {
-    return std::floor((x - minPoint.x) / 25) +
-           (gridWidthInPixels * std::floor((y - minPoint.y) / 25));
+                         const int &gridWidthInPixels,
+                         const float &sideLength) {
+    return std::floor((x - minPoint.x) / sideLength) +
+           (gridWidthInPixels * std::floor((y - minPoint.y) / sideLength));
 };
 
 void updateFRects(std::vector<SDL_FRect> &frects, const SDL_Point &minPoint,
                   const float &sideLength, const int &gridHeight) {
 
-    SDL_FRect pixelData = {(float)minPoint.x, (float)minPoint.y, 25.0f, 25.0f};
+    SDL_FRect pixelData = {(float)minPoint.x, (float)minPoint.y, sideLength,
+                           sideLength};
     frects[0] = pixelData;
 
     for (int i = 1; i < frects.size(); i++) {
@@ -32,6 +35,7 @@ void updateFRects(std::vector<SDL_FRect> &frects, const SDL_Point &minPoint,
         frects[i] = pixelData;
     };
 };
+
 }; // namespace
 
 namespace HLX {
@@ -39,12 +43,15 @@ PixelGrid::PixelGrid(SDLProps *sdlProps, const int widthInPixels,
                      const int heightInPixels)
     : mSDLProps(sdlProps) {
 
+    mGrid.widthInPixels = widthInPixels;
+    mGrid.heightInPixels = heightInPixels;
+    mGrid.pixelSideLength =
+        Constants::GridSizeToPixelSideLength[mGrid.widthInPixels];
+
     const int &totalPixelCount = mGrid.widthInPixels * mGrid.heightInPixels;
     SDL_Log("totalPixelCount: %d", totalPixelCount);
 
     SDL_Log("Reserving vector space...");
-    mGrid.widthInPixels = widthInPixels;
-    mGrid.heightInPixels = heightInPixels;
 
     mGrid.frects.reserve(totalPixelCount);
     mGrid.frects.assign(totalPixelCount, SDL_FRect{0.0f, 0.0f, 0.0f, 0.0f});
@@ -76,14 +83,16 @@ bool PixelGrid::init() {
     registerWindowCallbacks();
     registerToolCallbacks();
 
-    const float sideLength = 25 * 1.0f; // TODO: Update this ZoomLevel later
-    updateFRects(mGrid.frects, mMinPoint, sideLength, mGrid.heightInPixels);
+    const float sideLength =
+        mGrid.pixelSideLength * 1.0f; // TODO: Update this ZoomLevel later
+    updateFRects(mGrid.frects, mMinPoint, mGrid.pixelSideLength,
+                 mGrid.heightInPixels);
 
     mBackgroundFRect = {
         (float)mMinPoint.x,
         (float)mMinPoint.y,
-        (float)mGrid.widthInPixels * 25,
-        (float)mGrid.heightInPixels * 25,
+        (float)mGrid.widthInPixels * mGrid.pixelSideLength,
+        (float)mGrid.heightInPixels * mGrid.pixelSideLength,
     };
 
     return true;
@@ -108,14 +117,14 @@ void PixelGrid::registerWindowCallbacks() {
         setGridBounds(event->window.data1, event->window.data2);
 
         // TODO: CHANGE THIS, ADD ZOOM LEVEL SOMEWHERE
-        const float sideLength = 25 * 1.0f;
+        const float sideLength = mGrid.pixelSideLength * 1.0f;
         updateFRects(mGrid.frects, mMinPoint, sideLength, mGrid.heightInPixels);
 
         mBackgroundFRect = {
             (float)mMinPoint.x,
             (float)mMinPoint.y,
-            (float)mGrid.widthInPixels * 25,
-            (float)mGrid.heightInPixels * 25,
+            (float)mGrid.widthInPixels * mGrid.pixelSideLength,
+            (float)mGrid.heightInPixels * mGrid.pixelSideLength,
         };
     };
 
@@ -188,15 +197,17 @@ void PixelGrid::handleBrushEvent(const SDL_Point &startPoint,
     SDL_Point currentPoint;
 
     for (int i = 0; i < (brushSize * brushSize); i++) {
-        const SDL_Point &offsets = Constants::BrushSizePointOffsets[i];
-        currentPoint = {startPoint.x - offsets.x, startPoint.y - offsets.y};
+        const SDL_Point &offset = Constants::BrushSizePointOffsets[i];
+        currentPoint = {startPoint.x - (offset.x * mGrid.pixelSideLength),
+                        startPoint.y - (offset.y * mGrid.pixelSideLength)};
 
         if (!isPointInGrid(currentPoint)) {
             continue;
         };
 
-        const int &pixelIndex = getPixelIndex(currentPoint.x, currentPoint.y,
-                                              mMinPoint, mGrid.widthInPixels);
+        const int &pixelIndex =
+            getPixelIndex(currentPoint.x, currentPoint.y, mMinPoint,
+                          mGrid.widthInPixels, mGrid.pixelSideLength);
         brushIndicies.emplace_back(pixelIndex);
     };
 
@@ -216,7 +227,7 @@ void PixelGrid::handleBucketEvent(const SDL_Point &startPoint,
     };
 
     int pixelIndex = getPixelIndex(startPoint.x, startPoint.y, mMinPoint,
-                                   mGrid.widthInPixels);
+                                   mGrid.widthInPixels, mGrid.pixelSideLength);
     const SDL_FColor originalColor = mGrid.colors.at(pixelIndex);
 
     if (isRGBAColorEqual(originalColor, bucketColor)) {
@@ -239,7 +250,7 @@ void PixelGrid::handleBucketEvent(const SDL_Point &startPoint,
         };
 
         pixelIndex = getPixelIndex(currentPoint.x, currentPoint.y, mMinPoint,
-                                   mGrid.widthInPixels);
+                                   mGrid.widthInPixels, mGrid.pixelSideLength);
 
         currentColor = mGrid.colors[pixelIndex];
 
@@ -250,10 +261,14 @@ void PixelGrid::handleBucketEvent(const SDL_Point &startPoint,
         mGrid.colors[pixelIndex] = bucketColor;
         mGrid.states[pixelIndex] = Constants::PixelStateFilled;
 
-        queue.emplace(SDL_Point{currentPoint.x - 25, currentPoint.y});
-        queue.emplace(SDL_Point{currentPoint.x, currentPoint.y - 25});
-        queue.emplace(SDL_Point{currentPoint.x + 25, currentPoint.y});
-        queue.emplace(SDL_Point{currentPoint.x, currentPoint.y + 25});
+        queue.emplace(
+            SDL_Point{currentPoint.x - mGrid.pixelSideLength, currentPoint.y});
+        queue.emplace(
+            SDL_Point{currentPoint.x, currentPoint.y - mGrid.pixelSideLength});
+        queue.emplace(
+            SDL_Point{currentPoint.x + mGrid.pixelSideLength, currentPoint.y});
+        queue.emplace(
+            SDL_Point{currentPoint.x, currentPoint.y + mGrid.pixelSideLength});
     };
 };
 
@@ -263,13 +278,13 @@ inline void PixelGrid::setGridBounds(const int newWindowWidth,
     mMidPoint = {newWindowWidth / 2, newWindowHeight / 2};
 
     mMinPoint = {
-        mMidPoint.x - ((mGrid.widthInPixels / 2) * 25),
-        mMidPoint.y - ((mGrid.heightInPixels / 2) * 25),
+        mMidPoint.x - ((mGrid.widthInPixels / 2) * mGrid.pixelSideLength),
+        mMidPoint.y - ((mGrid.heightInPixels / 2) * mGrid.pixelSideLength),
     };
 
     mMaxPoint = {
-        mMidPoint.x + ((mGrid.widthInPixels / 2) * 25),
-        mMidPoint.y + ((mGrid.heightInPixels / 2) * 25),
+        mMidPoint.x + ((mGrid.widthInPixels / 2) * mGrid.pixelSideLength),
+        mMidPoint.y + ((mGrid.heightInPixels / 2) * mGrid.pixelSideLength),
     };
 };
 
