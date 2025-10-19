@@ -1,10 +1,13 @@
 #include "HLX_Gui.h"
 #include "Helix.h"
+#include "imgui.h"
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
 
 static bool isMouseDown = false;
+static int lastMouseButton;
+
 static bool isFullscreen = true;
 
 constexpr SDL_InitFlags initFlags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
@@ -47,7 +50,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // Process Input
     // NOTE: This allows mouse painting / dragging
     if (isMouseDown) {
-        helix.toolbox.useTool();
+        helix.toolbox.useTool(lastMouseButton);
     };
 
     // NOTE: Clear screen
@@ -75,6 +78,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     };
 
     if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+        lastMouseButton = event->button.button;
         isMouseDown = true;
     } else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
         isMouseDown = false;

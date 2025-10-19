@@ -1,8 +1,7 @@
 #pragma once
 
-#include <array>
-#include <stdexcept>
-#include <utility>
+#include "../HLX_pch.h"
+
 namespace HLX {
 typedef struct SDLProps {
     SDL_Window *window;
@@ -16,7 +15,9 @@ typedef struct WindowProps {
 } WindowProps;
 
 typedef struct ToolProps {
-    SDL_FColor color{0.0f, 0.0f, 0.0f, SDL_ALPHA_OPAQUE_FLOAT};
+    SDL_FColor primary = SDL_FColor{0.0f, 0.0f, 0.0f, 1.0f};
+    SDL_FColor secondary = SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f};
+    SDL_FColor *currentColor{&primary};
     int size{1};
 } ToolProps;
 
@@ -30,8 +31,12 @@ typedef struct Grid {
     std::vector<SDL_FRect> frects;
     std::vector<SDL_FColor> colors;
     std::vector<char> states;
+
+    int pixelSideLength{25};
     int widthInPixels{32};
     int heightInPixels{32};
+
+    float zoomPercent{1.0f};
 } Grid;
 
 template <typename Key, typename Value, size_t Size> struct ConstMap {
