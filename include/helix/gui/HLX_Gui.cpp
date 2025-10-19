@@ -249,13 +249,12 @@ void showSaveScreen(const Grid &grid) {
                 HLX::Image::savePNG(grid.widthInPixels, grid.heightInPixels,
                                     grid.colors, fileNamePath.c_str());
             };
-
-            static SDL_Event event;
-            event.type = Constants::HelixEvent;
-            event.user.code = Constants::EventGUINoPriority;
-            EventSystem::getInstance().publishToTopic(&event);
         };
 
+        static SDL_Event event;
+        event.type = Constants::HelixEvent;
+        event.user.code = Constants::EventGUINoPriority;
+        EventSystem::getInstance().publishToTopic(&event);
         ImGuiFileDialog::Instance()->Close();
     };
 };
