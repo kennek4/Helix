@@ -20,6 +20,7 @@ class PixelGrid : public Subscriber {
     bool init();
     void reset();
 
+    inline const int getPixelSideLength() { return mGrid.pixelSideLength; };
     inline const SDL_FRect &getBackgroundFRect() { return mBackgroundFRect; };
     inline const Grid &getGridData() { return mGrid; };
     inline bool *getIsActive() { return &mIsActive; };
