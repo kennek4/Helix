@@ -1,6 +1,6 @@
 #include "HLX_Gui.h"
 #include "Helix.h"
-#include <SDL3/SDL_mouse.h>
+#include "imgui.h"
 
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"

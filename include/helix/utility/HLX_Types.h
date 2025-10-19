@@ -1,10 +1,7 @@
 #pragma once
 
-#include <SDL3/SDL_mouse.h>
-#include <SDL3/SDL_pixels.h>
-#include <array>
-#include <stdexcept>
-#include <utility>
+#include "../HLX_pch.h"
+
 namespace HLX {
 typedef struct SDLProps {
     SDL_Window *window;
@@ -34,8 +31,12 @@ typedef struct Grid {
     std::vector<SDL_FRect> frects;
     std::vector<SDL_FColor> colors;
     std::vector<char> states;
+
+    int pixelSideLength{25};
     int widthInPixels{32};
     int heightInPixels{32};
+
+    float zoomPercent{1.0f};
 } Grid;
 
 template <typename Key, typename Value, size_t Size> struct ConstMap {
