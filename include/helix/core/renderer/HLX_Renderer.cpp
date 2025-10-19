@@ -1,12 +1,10 @@
 #include "HLX_Renderer.h"
-#include <cassert>
 
 namespace HLX {
 
 Renderer::Renderer(SDL_Renderer *renderer) : mSDLRenderer(renderer) {
-
     std::string bgPath = SDL_GetBasePath();
-    bgPath += "checkerboard.bmp";
+    bgPath += "assets/checkerboard.bmp";
 
     SDL_Surface *bgSurface = SDL_LoadBMP(bgPath.c_str());
 

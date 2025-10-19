@@ -56,7 +56,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // NOTE: Clear screen
     helix.renderer->clearScreen();
     helix.renderer->createBackground(helix.pixelGrid->getBackgroundFRect(),
-                                     25.0f / 256.0f);
+                                     helix.pixelGrid->getPixelSideLength() /
+                                         256.0f);
     helix.renderer->createGrid(helix.pixelGrid->getGridData());
 
     HLX::GUI::createFrame();
